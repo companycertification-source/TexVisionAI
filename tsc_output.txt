@@ -1,0 +1,31 @@
+components/HistoryView.tsx(79,50): error TS2532: Object is possibly 'undefined'.
+components/ReportView.tsx(38,42): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(39,12): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(215,26): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(259,20): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+components/ReportView.tsx(260,30): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(333,76): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(337,76): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(501,70): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(505,92): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(509,70): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(513,71): error TS18048: 'imageResult' is possibly 'undefined'.
+components/ReportView.tsx(597,8): error TS18048: 'imageResult' is possibly 'undefined'.
+components/SupplierView.tsx(44,40): error TS18048: 'reportDate' is possibly 'undefined'.
+components/SupplierView.tsx(324,25): error TS2322: Type '(value: number) => [string, "Defect Rate"]' is not assignable to type 'Formatter<number, "Defect Rate">'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+services/geminiService.ts(44,27): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+services/geminiService.ts(44,47): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+services/geminiService.ts(69,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+services/geminiService.ts(70,21): error TS2532: Object is possibly 'undefined'.
+services/geminiService.ts(72,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+vitest.config.ts(5,5): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'test' does not exist in type 'UserConfigExport'.

@@ -1,0 +1,166 @@
+
+> weldvision-ai@0.0.0 lint
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --no-color
+
+
+C:\Users\Administrator\Documents\weldvision-ai\App.tsx
+  45:10  warning  'isHistoryLoaded' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Documents\weldvision-ai\components\HistoryView.tsx
+   5:103  warning  'TrendingUp' is defined but never used        @typescript-eslint/no-unused-vars
+   5:167  warning  'ImageOff' is defined but never used          @typescript-eslint/no-unused-vars
+  50:9    warning  'flagged' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectionForm.tsx
+    3:168  warning  'Scale' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  122:7    error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectionForm.tsx:122:7
+  120 |   useEffect(() => {
+  121 |     if (meta.inspector_name !== inspectorName) {
+> 122 |       setMeta(prev => ({ ...prev, inspector_name: inspectorName }));
+      |       ^^^^^^^ Avoid calling setState() directly within an effect
+  123 |     }
+  124 |   }, [inspectorName, meta.inspector_name]);
+  125 |                                                                       react-hooks/set-state-in-effect
+  128:7    error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectionForm.tsx:128:7
+  126 |   useEffect(() => {
+  127 |     if (meta.sample_size && meta.sample_size > 0 && tagQuantity !== meta.sample_size) {
+> 128 |       setTagQuantity(meta.sample_size);
+      |       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  129 |     }
+  130 |   }, [meta.sample_size, tagQuantity]);
+  131 |                                                           react-hooks/set-state-in-effect
+  143:9    error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectionForm.tsx:143:9
+  141 |       // Only update if plan actually changes
+  142 |       if (!aqlPlan || aqlPlan.sampleSize !== plan.sampleSize || aqlPlan.code !== plan.code) {
+> 143 |         setAqlPlan(plan);
+      |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  144 |         setMeta(prev => ({
+  145 |           ...prev,
+  146 |           sample_size: plan.sampleSize,  react-hooks/set-state-in-effect
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectorView.tsx
+    3:88  warning  'Calendar' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+    6:24  warning  'Cell' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+    6:30  warning  'PieChart' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+    6:40  warning  'Pie' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   18:57  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+   20:44  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+   21:41  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+   98:21  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-explicit-any
+  127:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Administrator\Documents\weldvision-ai\components\InspectorView.tsx:127:9
+  125 |   useEffect(() => {
+  126 |     if (!inspectors.includes(selectedInspector) && inspectors.length > 0 && selectedInspector !== currentInspector) {
+> 127 |         setSelectedInspector(inspectors[0]);
+      |         ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  128 |     }
+  129 |   }, [inspectors, selectedInspector, currentInspector]);
+  130 |  react-hooks/set-state-in-effect
+
+C:\Users\Administrator\Documents\weldvision-ai\components\ItemCenter.tsx
+    5:3    warning  'BarChart' is defined but never used             @typescript-eslint/no-unused-vars
+    5:13   warning  'Bar' is defined but never used                  @typescript-eslint/no-unused-vars
+    5:18   warning  'LineChart' is defined but never used            @typescript-eslint/no-unused-vars
+    5:29   warning  'Line' is defined but never used                 @typescript-eslint/no-unused-vars
+    5:35   warning  'XAxis' is defined but never used                @typescript-eslint/no-unused-vars
+    5:42   warning  'YAxis' is defined but never used                @typescript-eslint/no-unused-vars
+    5:49   warning  'CartesianGrid' is defined but never used        @typescript-eslint/no-unused-vars
+    5:64   warning  'Tooltip' is defined but never used              @typescript-eslint/no-unused-vars
+    6:3    warning  'ResponsiveContainer' is defined but never used  @typescript-eslint/no-unused-vars
+  474:128  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Documents\weldvision-ai\components\OverlayImage.tsx
+  84:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Administrator\Documents\weldvision-ai\components\OverlayImage.tsx:84:5
+  82 |   // Reset zoom/pan when image changes or mode toggles
+  83 |   useEffect(() => {
+> 84 |     resetZoom();
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  85 |   }, [imageUrl, isSplitMode]);
+  86 |
+  87 |   const handleZoom = (delta: number) => {  react-hooks/set-state-in-effect
+
+C:\Users\Administrator\Documents\weldvision-ai\components\ReportView.tsx
+   2:28   warning  'Defect' is defined but never used        @typescript-eslint/no-unused-vars
+   4:205  warning  'ExternalLink' is defined but never used  @typescript-eslint/no-unused-vars
+   4:248  warning  'Camera' is defined but never used        @typescript-eslint/no-unused-vars
+   6:18   warning  'LineChart' is defined but never used     @typescript-eslint/no-unused-vars
+   6:29   warning  'Line' is defined but never used          @typescript-eslint/no-unused-vars
+   7:24   warning  'Cell' is defined but never used          @typescript-eslint/no-unused-vars
+  60:21   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  93:38   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Documents\weldvision-ai\components\SupplierView.tsx
+    3:73   warning  'TrendingUp' is defined but never used    @typescript-eslint/no-unused-vars
+    3:85   warning  'Calendar' is defined but never used      @typescript-eslint/no-unused-vars
+    3:119  warning  'PieChart' is defined but never used      @typescript-eslint/no-unused-vars
+    3:168  warning  'CheckCircle' is defined but never used   @typescript-eslint/no-unused-vars
+    3:190  warning  'Package' is defined but never used       @typescript-eslint/no-unused-vars
+    3:199  warning  'Award' is defined but never used         @typescript-eslint/no-unused-vars
+  226:20   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Documents\weldvision-ai\constants.ts
+  4:476  error  Irregular whitespace not allowed  no-irregular-whitespace
+
+C:\Users\Administrator\Documents\weldvision-ai\hooks\useInspection.ts
+   17:5   warning  'items' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  101:25  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  166:25  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Documents\weldvision-ai\services\dataService.ts
+  446:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  532:18  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  547:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\Administrator\Documents\weldvision-ai\services\geminiService.ts
+   63:55  warning  'label' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  116:16  warning  'e' is defined but never used                                            @typescript-eslint/no-unused-vars
+  163:18  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  207:24  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+  283:19  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
+
+C:\Users\Administrator\Documents\weldvision-ai\utils\env.ts
+   4:3   error    Include a description after the "@ts-expect-error" directive to explain why the @ts-expect-error is necessary. The description must be 3 characters or longer  @typescript-eslint/ban-ts-comment
+   6:5   error    Include a description after the "@ts-expect-error" directive to explain why the @ts-expect-error is necessary. The description must be 3 characters or longer  @typescript-eslint/ban-ts-comment
+  18:12  warning  'e' is defined but never used                                                                                                                                  @typescript-eslint/no-unused-vars
+
+✖ 58 problems (8 errors, 50 warnings)
+
