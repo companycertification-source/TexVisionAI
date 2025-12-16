@@ -273,34 +273,47 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Google OAuth login
     const loginWithGoogle = async (): Promise<void> => {
+        console.log('[Auth] loginWithGoogle called');
+        console.log('[Auth] isSupabaseConfigured:', isSupabaseConfigured());
+        console.log('[Auth] supabase:', !!supabase);
+
         if (!isSupabaseConfigured() || !supabase) {
+            const error = 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.';
+            console.error('[Auth]', error);
             setState(prev => ({
                 ...prev,
-                error: 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+                error,
             }));
             return;
         }
 
         try {
             setState(prev => ({ ...prev, isLoading: true, error: null }));
+            console.log('[Auth] Starting OAuth flow...');
 
-            const { error } = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin,
                 },
             });
 
+            console.log('[Auth] OAuth response:', { data, error });
+
             if (error) {
+                console.error('[Auth] OAuth error:', error);
                 setState(prev => ({
                     ...prev,
                     isLoading: false,
                     error: error.message,
                 }));
+            } else {
+                console.log('[Auth] OAuth initiated, redirecting...');
             }
             // Note: On success, the page will redirect to Google
             // After returning, the useEffect will pick up the session
         } catch (error) {
+            console.error('[Auth] OAuth exception:', error);
             const message = error instanceof Error ? error.message : 'Google login failed';
             setState(prev => ({
                 ...prev,
