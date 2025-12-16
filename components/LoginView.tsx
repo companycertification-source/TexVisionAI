@@ -137,8 +137,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <div className="grid grid-cols-1 gap-3">
               {/* Google Login Button */}
               <button
+                type="button"
                 onClick={loginWithGoogle}
                 disabled={isLoading}
+                aria-label="Continue with Google"
                 className="flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium py-3 px-4 rounded-xl transition-all shadow-sm disabled:opacity-50"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
