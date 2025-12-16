@@ -29,6 +29,7 @@ interface AuthState {
 // Auth context type
 interface AuthContextType extends AuthState {
     login: (email: string, password: string) => Promise<boolean>;
+    loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     demoLogin: () => void;
     clearError: () => void;
@@ -270,6 +271,45 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         auditLog.loginSuccess(user);
     };
 
+    // Google OAuth login
+    const loginWithGoogle = async (): Promise<void> => {
+        if (!isSupabaseConfigured() || !supabase) {
+            setState(prev => ({
+                ...prev,
+                error: 'Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.',
+            }));
+            return;
+        }
+
+        try {
+            setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin,
+                },
+            });
+
+            if (error) {
+                setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    error: error.message,
+                }));
+            }
+            // Note: On success, the page will redirect to Google
+            // After returning, the useEffect will pick up the session
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Google login failed';
+            setState(prev => ({
+                ...prev,
+                isLoading: false,
+                error: message,
+            }));
+        }
+    };
+
     // Logout
     const logout = async () => {
         const currentUser = state.user;
@@ -317,6 +357,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             value={{
                 ...state,
                 login,
+                loginWithGoogle,
                 logout,
                 demoLogin,
                 clearError,
