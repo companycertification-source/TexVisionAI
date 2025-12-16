@@ -35,7 +35,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     <>
       <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fadeIn">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-          <div className="bg-slate-900 p-8 text-center">
+          <div className="bg-slate-900 p-8 text-center relative">
+            {/* How it Works button in header */}
+            <button
+              onClick={() => setShowInfo(true)}
+              className="absolute top-4 right-4 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium py-1.5 px-3 rounded-lg transition-all"
+            >
+              <Info className="w-3.5 h-3.5" />
+              How it Works
+            </button>
             <div className="flex justify-center mb-4">
               <div className="bg-blue-600 p-3 rounded-xl shadow-lg">
                 <Shield className="h-10 w-10 text-white" />
@@ -153,7 +161,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <button
                 onClick={handleDemoLogin}
                 disabled={isLoading}
@@ -161,13 +169,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               >
                 <UserCheck className="w-4 h-4" />
                 Demo Login
-              </button>
-              <button
-                onClick={() => setShowInfo(true)}
-                className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 font-bold py-3 px-4 rounded-xl transition-all shadow-sm text-sm"
-              >
-                <Info className="w-4 h-4 text-blue-500" />
-                How it Works
               </button>
             </div>
 
