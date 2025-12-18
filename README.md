@@ -1,4 +1,4 @@
-# WeldVision AI 🏗️⚡ - Production Ready
+# WeldVision AI 🏗️⚡
 
 **WeldVision AI** is an intelligent quality control assistant designed for welding electrode manufacturing. It leverages the **Google Gemini 2.5 Flash API** to perform visual inspections, detecting defects, reading text (OCR), and analyzing conformity against ISO standards.
 
