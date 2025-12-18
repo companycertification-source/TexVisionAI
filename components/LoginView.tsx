@@ -39,9 +39,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             {/* How it Works button in header */}
             <button
               onClick={() => setShowInfo(true)}
-              className="absolute top-4 right-4 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium py-1.5 px-3 rounded-lg transition-all"
+              className="absolute top-4 right-4 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold py-2 px-3.5 rounded-lg transition-all shadow-md hover:shadow-lg border border-slate-700"
             >
-              <Info className="w-3.5 h-3.5" />
+              <Info className="w-4 h-4" />
               How it Works
             </button>
             <div className="flex justify-center mb-4">
