@@ -177,7 +177,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 Demo credentials: any email with password "demo123"
               </p>
               <p className="text-xs text-gray-400">
-                System v2.5.0 • Powered by Gemini AI
+                System v2.5.1 • Powered by Gemini AI • Build: 2025-12-18
               </p>
             </div>
           </div>
