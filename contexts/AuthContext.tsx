@@ -54,9 +54,57 @@ const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AuthState>(defaultState);
 
-    // Check for existing session on mount
+    // Check for existing session on mount and listen for auth state changes
     useEffect(() => {
         checkSession();
+
+        // Set up auth state change listener for OAuth redirects
+        if (isSupabaseConfigured() && supabase) {
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(
+                async (event, session) => {
+                    console.log('[Auth] onAuthStateChange event:', event, 'session:', !!session);
+
+                    if (event === 'SIGNED_IN' && session?.user) {
+                        console.log('[Auth] User signed in via OAuth:', session.user.email);
+                        const user: AuthUser = {
+                            id: session.user.id,
+                            email: session.user.email || '',
+                            name: session.user.user_metadata?.full_name ||
+                                session.user.user_metadata?.name ||
+                                session.user.email?.split('@')[0] || 'User',
+                            role: session.user.user_metadata?.role || 'inspector',
+                            createdAt: session.user.created_at,
+                        };
+
+                        setState({
+                            user,
+                            isAuthenticated: true,
+                            isLoading: false,
+                            error: null,
+                        });
+
+                        // Audit log
+                        auditLog.loginSuccess(user);
+                    } else if (event === 'SIGNED_OUT') {
+                        console.log('[Auth] User signed out');
+                        setState({
+                            user: null,
+                            isAuthenticated: false,
+                            isLoading: false,
+                            error: null,
+                        });
+                    } else if (event === 'TOKEN_REFRESHED') {
+                        console.log('[Auth] Token refreshed');
+                        // Session is still valid, no state change needed
+                    }
+                }
+            );
+
+            // Cleanup subscription on unmount
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
     }, []);
 
     // Check stored session

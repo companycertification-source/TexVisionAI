@@ -72,6 +72,15 @@ const App: React.FC = () => {
     updateHistoryReport
   } = useInspection(history, setHistory, items);
 
+  // Sync navigation with auth state (handles OAuth redirect)
+  useEffect(() => {
+    if (isAuthenticated && user && step === 'login') {
+      console.log('[App] User authenticated, navigating to input step');
+      setMeta(prev => ({ ...prev, inspector_name: user.name }));
+      login();
+    }
+  }, [isAuthenticated, user, step, login]);
+
   // Load Initial Data
   useEffect(() => {
     const loadData = async () => {
