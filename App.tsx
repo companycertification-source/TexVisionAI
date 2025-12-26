@@ -6,11 +6,13 @@ import { HistoryView } from './components/HistoryView';
 import { SupplierView } from './components/SupplierView';
 import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
+import { AdminPanel } from './components/AdminPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useRole } from './contexts/RoleContext';
 import { dataService } from './services/dataService';
 import { MetaData, InspectionReport, ItemMaster } from './types';
-import { Shield, Hammer, Activity, LayoutDashboard, Package, Users, UserCheck, Camera, LogOut } from 'lucide-react';
+import { Shield, Hammer, Activity, LayoutDashboard, Package, Users, UserCheck, Camera, LogOut, Settings } from 'lucide-react';
 import { useInspection } from './hooks/useInspection';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
@@ -41,7 +43,10 @@ const App: React.FC = () => {
   const { user, isAuthenticated, logout: authLogout } = useAuth();
 
   // Navigation State
-  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToReport, goBack } = useAppNavigation();
+  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToReport, goBack } = useAppNavigation();
+
+  // Role-based access
+  const { isAdmin, role } = useRole();
 
   // Data State
   const [history, setHistory] = useState<InspectionReport[]>([]);
@@ -223,6 +228,15 @@ const App: React.FC = () => {
                   <UserCheck className="w-4 h-4" />
                   <span className="hidden sm:inline">My Performance</span>
                 </button>
+                {isAdmin && (
+                  <button
+                    onClick={goToAdmin}
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </button>
+                )}
 
                 <div className="h-4 w-px bg-slate-700 hidden sm:block"></div>
                 <div className="hidden sm:flex items-center gap-4 text-sm">
@@ -342,6 +356,12 @@ const App: React.FC = () => {
               onBack={handleManualReset}
               onViewReport={handleSelectHistoryReport}
             />
+          </ErrorBoundary>
+        )}
+
+        {step === 'admin' && isAdmin && (
+          <ErrorBoundary>
+            <AdminPanel onClose={handleManualReset} />
           </ErrorBoundary>
         )}
       </main>

@@ -96,14 +96,19 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// Import RoleProvider dynamically to avoid circular dependencies
+import { RoleProvider } from './contexts/RoleContext';
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <App />
-        {/* Vercel Analytics - tracks page views automatically */}
-        <Analytics />
+        <RoleProvider>
+          <App />
+          {/* Vercel Analytics - tracks page views automatically */}
+          <Analytics />
+        </RoleProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

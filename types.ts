@@ -146,7 +146,7 @@ export interface ItemMaster {
   dimensions?: string; // e.g. "Dia: 3.2mm, L: 350mm"
   description: string;
   specifications: string;
-  quality_checkpoints?: string[]; 
+  quality_checkpoints?: string[];
   reference_image_url?: string;
   // New field for analysis standards
   standard_images?: {
@@ -180,16 +180,16 @@ export interface MetaData {
   aql_major?: number;
   aql_minor?: number;
   acceptance_limits?: {
-     major_ac: number;
-     major_re: number;
-     minor_ac: number;
-     minor_re: number;
+    major_ac: number;
+    major_re: number;
+    minor_ac: number;
+    minor_re: number;
   };
 }
 
 export interface AppState {
-  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors';
-  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors';
+  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors' | 'admin';
+  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors' | 'admin';
   meta: MetaData;
   history: InspectionReport[];
   items: ItemMaster[];
