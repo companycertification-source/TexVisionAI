@@ -127,8 +127,15 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await authLogout();
-    logout();
+    console.log('[App] handleLogout called');
+    try {
+      await authLogout();
+      console.log('[App] authLogout completed');
+      logout();
+      console.log('[App] navigation logout completed');
+    } catch (error) {
+      console.error('[App] Logout error:', error);
+    }
   };
 
   const handleStartInspection = async (newMeta: MetaData, files: File[]) => {
@@ -239,6 +246,7 @@ const App: React.FC = () => {
                 )}
 
                 <div className="h-4 w-px bg-slate-700 hidden sm:block"></div>
+                {/* Desktop: Show avatar + logout */}
                 <div className="hidden sm:flex items-center gap-4 text-sm">
                   <UserAvatar name={user?.name || meta.inspector_name || 'Inspector'} />
                   <button onClick={handleLogout} className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors">
@@ -246,6 +254,10 @@ const App: React.FC = () => {
                     Logout
                   </button>
                 </div>
+                {/* Mobile: Just logout icon */}
+                <button onClick={handleLogout} className="sm:hidden p-2 text-slate-400 hover:text-white transition-colors" title="Logout">
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
             )}
           </div>

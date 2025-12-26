@@ -69,18 +69,14 @@ CREATE POLICY "System can insert default roles" ON public.user_roles
 -- =====================================================
 -- IMPORTANT: First Admin Setup
 -- =====================================================
--- After you run this script, you need to manually add your first admin.
--- Replace 'your-email@example.com' with your actual email.
+-- This will create the first admin user automatically
 
--- Option 1: If user already exists in auth.users
--- INSERT INTO public.user_roles (user_id, email, role)
--- SELECT id, email, 'admin'
--- FROM auth.users
--- WHERE email = 'companycertification@gmail.com';
-
--- Option 2: Direct insert (get user_id from Supabase Auth > Users)
--- INSERT INTO public.user_roles (user_id, email, role)
--- VALUES ('YOUR-USER-UUID-HERE', 'your-email@example.com', 'admin');
+-- Create admin role for asimkhaniso@gmail.com (if user exists)
+INSERT INTO public.user_roles (user_id, email, role)
+SELECT id, email, 'admin'
+FROM auth.users
+WHERE email = 'asimkhaniso@gmail.com'
+ON CONFLICT (user_id) DO UPDATE SET role = 'admin';
 
 -- =====================================================
 -- Verification Queries
