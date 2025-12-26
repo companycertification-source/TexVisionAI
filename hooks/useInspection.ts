@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { InspectionReport, MetaData, ItemMaster } from '../types';
 import { analyzeInspection } from '../services/geminiService';
 import { dataService } from '../services/dataService';
+import { uploadImages, isStorageConfigured } from '../services/storageService';
 
 export interface InspectionState {
     report: InspectionReport | null;
@@ -108,13 +109,31 @@ export const useInspection = (
                 selectedItemContext || undefined
             );
 
-            // Compress images for history storage (85% size reduction)
-            const { compressImages } = await import('../utils/imageCompression');
-            const compressedImages = await compressImages(base64Images);
+            // Generate a unique inspection ID for storage
+            const inspectionId = report.inspection_header.inspection_date_time || new Date().toISOString();
+
+            // Try to upload images to Supabase Storage
+            let imageUrls: string[];
+            if (isStorageConfigured()) {
+                console.log('[Storage] Uploading images to Supabase Storage...');
+                const uploadResult = await uploadImages(base64Images, inspectionId);
+                imageUrls = uploadResult.urls;
+                if (uploadResult.errors.length > 0) {
+                    console.warn('[Storage] Some images failed to upload:', uploadResult.errors);
+                }
+                if (!uploadResult.usedFallback) {
+                    console.log('[Storage] All images uploaded successfully to Supabase Storage');
+                }
+            } else {
+                // Fallback: Compress images for local storage
+                console.log('[Storage] Supabase Storage not configured, using compressed base64 fallback');
+                const { compressImages } = await import('../utils/imageCompression');
+                imageUrls = await compressImages(base64Images);
+            }
 
             const fullReport: InspectionReport = {
                 ...report,
-                imageUrls: compressedImages, // Store compressed thumbnails
+                imageUrls: imageUrls, // Store URLs from Supabase or compressed base64
                 summary: summary,
             };
 
@@ -179,13 +198,28 @@ export const useInspection = (
                 selectedItemContext || undefined
             );
 
-            // Compress images for history storage (85% size reduction)
-            const { compressImages } = await import('../utils/imageCompression');
-            const compressedImages = await compressImages(allBase64Images);
+            // Generate inspection ID for storage
+            const inspectionId = inspectionState.report.inspection_header.inspection_date_time || new Date().toISOString();
+
+            // Try to upload images to Supabase Storage
+            let imageUrls: string[];
+            if (isStorageConfigured()) {
+                console.log('[Storage] Uploading images to Supabase Storage...');
+                const uploadResult = await uploadImages(allBase64Images, inspectionId);
+                imageUrls = uploadResult.urls;
+                if (uploadResult.errors.length > 0) {
+                    console.warn('[Storage] Some images failed to upload:', uploadResult.errors);
+                }
+            } else {
+                // Fallback: Compress images for local storage
+                console.log('[Storage] Supabase Storage not configured, using compressed base64 fallback');
+                const { compressImages } = await import('../utils/imageCompression');
+                imageUrls = await compressImages(allBase64Images);
+            }
 
             const fullReport: InspectionReport = {
                 ...report,
-                imageUrls: compressedImages, // Store compressed thumbnails
+                imageUrls: imageUrls, // Store URLs from Supabase or compressed base64
                 summary: summary,
                 inspection_header: {
                     ...report.inspection_header,
