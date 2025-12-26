@@ -42,9 +42,23 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         try {
             console.log('[RoleContext] Calling getCurrentUserRole...');
-            const userRole = await getCurrentUserRole();
-            console.log('[RoleContext] Role detected:', userRole);
-            setRole(userRole);
+
+            // Create a timeout promise
+            const timeoutPromise = new Promise<null>((resolve) =>
+                setTimeout(() => {
+                    console.warn('[RoleContext] Role fetch timed out after 7s');
+                    resolve(null);
+                }, 7000)
+            );
+
+            // Fetch role with timeout protection
+            const userRole = await Promise.race([
+                getCurrentUserRole(),
+                timeoutPromise
+            ]) as UserRole | null;
+
+            console.log('[RoleContext] Role assigned after fetch/timeout:', userRole);
+            setRole(userRole || 'viewer'); // Fallback to viewer if timeout or null
         } catch (error) {
             console.error('[RoleContext] Error fetching role:', error);
             setRole('viewer');

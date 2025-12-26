@@ -115,31 +115,41 @@ export const getCurrentUserRole = async (): Promise<UserRole | null> => {
             return null;
         }
 
-        console.log('[Role] Fetching role for user:', user.email, 'id:', user.id);
+        const userEmail = user.email?.toLowerCase();
+        console.log('[Role] Fetching role for user:', userEmail);
 
-        const { data, error } = await supabase
+        // --- HARDCODED OVERRIDE FOR INITIAL ADMIN ---
+        // This ensures the primary admin always has access even if DB tables hang
+        if (userEmail === 'asimkhaniso@gmail.com' || userEmail === 'companycertification@gmail.com') {
+            console.log('[Role] Hardcoded admin override triggered for:', userEmail);
+            return 'admin';
+        }
+
+        // Try to fetch from database with a 5-second timeout "race"
+        const fetchPromise = supabase
             .from('user_roles')
             .select('role')
             .eq('user_id', user.id)
             .single();
 
-        if (error) {
-            console.error('[Role] Database error:', error.code, error.message);
+        // Wrap in timeout to prevent hanging the whole app
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT', message: 'Request timed out' } }), 5000)
+        );
 
-            // If no role found, user might be new - create default role
+        const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+        if (error) {
+            console.error('[Role] Role fetch error:', error.code, error.message);
+
+            // If no role found, user might be new - create default role (don't wait for it)
             if (error.code === 'PGRST116') {
                 console.log('[Role] No role found for user, creating default viewer role');
-                await createDefaultRole(user.id, user.email || '');
+                createDefaultRole(user.id, user.email || '').catch(console.error);
                 return 'viewer';
             }
 
-            // Table doesn't exist
-            if (error.code === '42P01' || error.message?.includes('does not exist')) {
-                console.error('[Role] user_roles table does not exist! Run the SQL migration.');
-                return 'viewer';
-            }
-
-            return 'viewer'; // Default to viewer on error
+            return 'viewer'; // Default to viewer on error or timeout
         }
 
         console.log('[Role] User role fetched:', data?.role);

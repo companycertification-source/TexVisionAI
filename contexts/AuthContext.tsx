@@ -376,45 +376,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('[Auth] logout function called');
         const currentUser = state.user;
 
+        // 1. Immediately update UI state to avoid hanging the user
+        console.log('[Auth] Clearing local state immediately...');
+        setState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+        });
+
+        // 2. Clear local storage keys
+        console.log('[Auth] Clearing storage keys...');
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem('sb-token');
+        localStorage.removeItem('supabase.auth.token');
+
+        // Clear all keys starting with 'sb-' (Supabase typical keys)
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('sb-')) localStorage.removeItem(key);
+        });
+
         try {
-            // Clear Supabase session
+            // 3. Attempt Supabase signOut (non-blocking or with short timeout)
             if (isSupabaseConfigured() && supabase) {
-                console.log('[Auth] Attempting Supabase signOut...');
-                const { error } = await supabase.auth.signOut();
-                if (error) console.error('[Auth] Supabase signOut error:', error);
-                else console.log('[Auth] Supabase signOut completed');
+                console.log('[Auth] Triggering Supabase signOut (background)...');
+
+                // We fire and forget this, or use a race to avoid hanging session
+                const signOutPromise = supabase.auth.signOut().then(({ error }) => {
+                    if (error) console.error('[Auth] Supabase signOut error:', error);
+                    else console.log('[Auth] Supabase signOut completed in background');
+                });
+
+                // Wait max 1.5 seconds for Supabase, then move on anyway
+                await Promise.race([
+                    signOutPromise,
+                    new Promise(resolve => setTimeout(resolve, 1500))
+                ]);
             }
 
-            // Clear local storage
-            console.log('[Auth] Clearing session keys...');
-            localStorage.removeItem(SESSION_KEY);
-            // Clear any other auth remnants
-            localStorage.removeItem('sb-token');
-            localStorage.removeItem('supabase.auth.token');
-
-            console.log('[Auth] Updating local state to null...');
-            setState({
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-                error: null,
-            });
-
-            // Audit log
+            // 4. Audit log
             if (currentUser) {
                 console.log('[Auth] Recording logout audit log...');
-                auditLog.logout(currentUser);
+                auditLog.logout(currentUser).catch(e => console.error('Audit log error:', e));
             }
+
+            // 5. Final redirection hint (optional, but good for SPA)
+            console.log('[Auth] Logout sequence finalized');
         } catch (error) {
             console.error('[Auth] Logout catch block error:', error);
-            // Still clear local state even if Supabase logout fails
-            localStorage.removeItem(SESSION_KEY);
-            setState({
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-                error: null,
-            });
         }
     };
 
