@@ -218,6 +218,14 @@ const App: React.FC = () => {
                   <Package className="w-4 h-4" />
                   <span className="hidden lg:inline">Items</span>
                 </button>
+                <button onClick={goToSuppliers} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'suppliers' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+                  <Users className="w-4 h-4" />
+                  <span className="hidden lg:inline">Vendors</span>
+                </button>
+                <button onClick={goToInspectors} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'inspectors' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+                  <UserCheck className="w-4 h-4" />
+                  <span className="hidden lg:inline">Performance</span>
+                </button>
 
                 {isAdmin && (
                   <button onClick={goToAdmin} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
