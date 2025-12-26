@@ -200,10 +200,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Use Supabase if configured
             if (isSupabaseConfigured() && supabase) {
+                console.log('[Auth] Attempting Supabase login for:', email);
+                const startTime = Date.now();
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
                 });
+                console.log(`[Auth] Supabase login response in ${Date.now() - startTime}ms`);
 
                 if (error) {
                     setState(prev => ({

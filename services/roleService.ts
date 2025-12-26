@@ -96,66 +96,60 @@ export const hasPermission = (role: UserRole, permission: keyof RolePermissions)
 /**
  * Get the current user's role from the database
  */
-export const getCurrentUserRole = async (): Promise<UserRole | null> => {
+export const getCurrentUserRole = async (providedId?: string, providedEmail?: string): Promise<UserRole | null> => {
     if (!isSupabaseConfigured() || !supabase) {
         console.warn('[Role] Supabase not configured, defaulting to viewer');
         return 'viewer';
     }
 
     try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        let userId = providedId;
+        let userEmail = providedEmail?.toLowerCase();
 
-        if (authError) {
-            console.error('[Role] Auth error:', authError);
-            return 'viewer';
+        // If not provided, fetch current user (slow)
+        if (!userId || !userEmail) {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+                console.log('[Role] No authenticated user found in getUser()');
+                return null;
+            }
+            userId = user.id;
+            userEmail = user.email?.toLowerCase();
         }
 
-        if (!user) {
-            console.log('[Role] No authenticated user');
-            return null;
-        }
+        console.log('[Role] Checking role for:', userEmail);
 
-        const userEmail = user.email?.toLowerCase();
-        console.log('[Role] Fetching role for user:', userEmail);
-
-        // --- HARDCODED OVERRIDE FOR INITIAL ADMIN ---
-        // This ensures the primary admin always has access even if DB tables hang
+        // --- HARDCODED OVERRIDE FOR INITIAL ADMINS ---
         if (userEmail === 'asimkhaniso@gmail.com' || userEmail === 'companycertification@gmail.com') {
-            console.log('[Role] Hardcoded admin override triggered for:', userEmail);
+            console.log('[Role] Direct admin override triggered for:', userEmail);
             return 'admin';
         }
 
-        // Try to fetch from database with a 5-second timeout "race"
+        // Try to fetch from database with a short 3-second timeout
         const fetchPromise = supabase
             .from('user_roles')
             .select('role')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
             .single();
 
-        // Wrap in timeout to prevent hanging the whole app
         const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
-            setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT', message: 'Request timed out' } }), 5000)
+            setTimeout(() => resolve({ data: null, error: { code: 'TIMEOUT', message: 'DB Timeout' } }), 3000)
         );
 
         const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
         if (error) {
-            console.error('[Role] Role fetch error:', error.code, error.message);
-
-            // If no role found, user might be new - create default role (don't wait for it)
             if (error.code === 'PGRST116') {
-                console.log('[Role] No role found for user, creating default viewer role');
-                createDefaultRole(user.id, user.email || '').catch(console.error);
+                console.log('[Role] No role record, creating default viewer');
+                createDefaultRole(userId, userEmail || '').catch(() => { });
                 return 'viewer';
             }
-
-            return 'viewer'; // Default to viewer on error or timeout
+            return 'viewer';
         }
 
-        console.log('[Role] User role fetched:', data?.role);
         return data?.role as UserRole || 'viewer';
     } catch (error) {
-        console.error('[Role] Error getting user role:', error);
+        console.error('[Role] Role fetch crashed:', error);
         return 'viewer';
     }
 };

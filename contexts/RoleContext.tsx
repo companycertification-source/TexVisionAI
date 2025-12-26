@@ -33,7 +33,7 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [role, setRole] = useState<UserRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchRole = useCallback(async () => {
+    const fetchRole = useCallback(async (providedId?: string, providedEmail?: string) => {
         if (!isSupabaseConfigured()) {
             setRole('viewer'); // Default for demo mode
             setIsLoading(false);
@@ -41,23 +41,23 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
-            console.log('[RoleContext] Calling getCurrentUserRole...');
+            console.log('[RoleContext] Requesting role check for:', providedEmail || 'current user');
 
             // Create a timeout promise
             const timeoutPromise = new Promise<null>((resolve) =>
                 setTimeout(() => {
-                    console.warn('[RoleContext] Role fetch timed out after 7s');
+                    console.warn('[RoleContext] Role fetch timed out after 5s');
                     resolve(null);
-                }, 7000)
+                }, 5000)
             );
 
-            // Fetch role with timeout protection
+            // Fetch role with provided info or from session
             const userRole = await Promise.race([
-                getCurrentUserRole(),
+                getCurrentUserRole(providedId, providedEmail),
                 timeoutPromise
             ]) as UserRole | null;
 
-            console.log('[RoleContext] Role assigned after fetch/timeout:', userRole);
+            console.log('[RoleContext] Role detected:', userRole);
             setRole(userRole || 'viewer'); // Fallback to viewer if timeout or null
         } catch (error) {
             console.error('[RoleContext] Error fetching role:', error);
@@ -74,11 +74,16 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!supabase) return;
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[RoleContext] Auth event:', event);
             if (event === 'SIGNED_IN' && session?.user) {
-                // Create default role for new users
-                await createDefaultRole(session.user.id, session.user.email || '');
-                await fetchRole();
+                console.log('[RoleContext] SIGNED_IN detected, pre-empting role check...');
+                // FIRE AND FORGET: Create default role for new users
+                createDefaultRole(session.user.id, session.user.email || '').catch(() => { });
+
+                // Fetch using info we already have (MUCH FASTER)
+                fetchRole(session.user.id, session.user.email);
             } else if (event === 'SIGNED_OUT') {
+                console.log('[RoleContext] SIGNED_OUT detected, clearing role');
                 setRole(null);
             }
         });

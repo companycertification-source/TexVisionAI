@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { InspectionForm } from './components/InspectionForm';
 import { ReportView } from './components/ReportView';
 import { LoginView } from './components/LoginView';
@@ -8,7 +8,7 @@ import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
 import { AdminPanel } from './components/AdminPanel';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';
 import { dataService } from './services/dataService';
 import { MetaData, InspectionReport, ItemMaster } from './types';
@@ -39,25 +39,18 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, desc }) => (
 );
 
 const App: React.FC = () => {
-  // Auth State
+  // Auth & Role State
   const { user, isAuthenticated, logout: authLogout } = useAuth();
+  const { isAdmin, role, isLoading: isRoleLoading } = useRole();
 
   // Navigation State
   const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToReport, goBack } = useAppNavigation();
-
-  // Role-based access
-  const { isAdmin, role, isLoading: isRoleLoading } = useRole();
-  useEffect(() => {
-    if (!isRoleLoading) {
-      console.log('[App] Current role detected:', role, 'isAdmin:', isAdmin);
-    }
-  }, [role, isAdmin, isRoleLoading]);
 
   // Data State
   const [history, setHistory] = useState<InspectionReport[]>([]);
   const [items, setItems] = useState<ItemMaster[]>([]);
   const [baseSuppliers, setBaseSuppliers] = useState<string[]>([]);
-  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(false);
 
   // App Context State
   const [meta, setMeta] = useState<MetaData>({
@@ -82,35 +75,48 @@ const App: React.FC = () => {
     updateHistoryReport
   } = useInspection(history, setHistory, items);
 
-  // Sync navigation with auth state (handles OAuth redirect)
+  // Sync navigation with auth state
   useEffect(() => {
     if (isAuthenticated && user && step === 'login') {
-      console.log('[App] User authenticated, navigating to input step');
-      setMeta(prev => ({ ...prev, inspector_name: user.name }));
+      console.log('[App] Auth synced, jumping to input');
+      setMeta(prev => ({ ...prev, inspector_name: user.name || prev.inspector_name }));
       login();
     }
   }, [isAuthenticated, user, step, login]);
 
-  // Load Initial Data
+  // Optimized Data Load
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
+      if (!isAuthenticated) return;
+
+      console.log('[App] Starting optimized data load...');
+      setIsDataLoading(true);
+
       try {
-        const [historyData, itemsData, suppliersData] = await Promise.all([
-          dataService.getHistory(),
-          dataService.getItems(),
-          dataService.getSuppliers()
+        const results = await Promise.race([
+          Promise.all([
+            dataService.getItems().catch(() => []),
+            dataService.getHistory().catch(() => []),
+            dataService.getSuppliers().catch(() => [])
+          ]),
+          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Data timeout')), 4000))
         ]);
 
-        setHistory(historyData);
-        setItems(itemsData);
-        setBaseSuppliers(suppliersData);
-        setIsHistoryLoaded(true);
-      } catch (e) {
-        console.error("Failed to load initial data", e);
+        if (results) {
+          setItems(results[0]);
+          setHistory(results[1]);
+          setBaseSuppliers(results[2]);
+          console.log('[App] Data loaded successfully');
+        }
+      } catch (error) {
+        console.warn('[App] Data load constrained:', error);
+      } finally {
+        setIsDataLoading(false);
       }
     };
-    loadData();
-  }, []);
+
+    loadInitialData();
+  }, [isAuthenticated]);
 
   // Derived Data
   const suppliers = useMemo(() => {
@@ -124,31 +130,26 @@ const App: React.FC = () => {
   }, [inspectionState.report, items]);
 
   // Handlers
-  const handleLoginSuccess = () => {
-    if (user) {
-      setMeta(prev => ({ ...prev, inspector_name: user.name }));
-    }
+  const handleLoginSuccess = useCallback(() => {
+    if (user) setMeta(prev => ({ ...prev, inspector_name: user.name }));
     login();
-  };
+  }, [user, login]);
 
-  const handleLogout = async () => {
-    console.log('[App] handleLogout called');
+  const handleLogout = useCallback(async () => {
+    console.log('[App] Logout sequence initiated');
     try {
-      await authLogout();
-      console.log('[App] authLogout completed');
-      logout();
-      console.log('[App] navigation logout completed');
+      await authLogout(); // Should be non-blocking now
+      logout(); // Nav reset
+      goHome();
     } catch (error) {
       console.error('[App] Logout error:', error);
     }
-  };
+  }, [authLogout, logout, goHome]);
 
   const handleStartInspection = async (newMeta: MetaData, files: File[]) => {
     setMeta(newMeta);
     const success = await startInspection(files, newMeta, selectedItemContext);
-    if (success) {
-      goToReport();
-    }
+    if (success) goToReport();
   };
 
   const handleManualReset = () => {
@@ -164,7 +165,6 @@ const App: React.FC = () => {
   const handleSelectHistoryReport = (report: InspectionReport) => {
     const contextItem = items.find(i => i.code === report.inspection_header.product_code);
     setSelectedItemContext(contextItem || null);
-
     setLoadedReport(report);
     goToReport();
   };
@@ -200,69 +200,43 @@ const App: React.FC = () => {
               </div>
               <div>
                 <span className="font-bold text-xl tracking-tight">WeldVision AI</span>
-                <span className="text-xs block text-slate-400 font-light">Intelligent Quality Control</span>
+                <span className="text-xs block text-slate-400 font-light">Quality Control Portal</span>
               </div>
             </div>
-            {step !== 'login' && (
-              <div className="flex items-center space-x-4 md:space-x-6">
-                <button
-                  onClick={handleNewInspection}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'input' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
+
+            {isAuthenticated && (
+              <div className="flex items-center space-x-2 md:space-x-6">
+                <button onClick={handleNewInspection} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'input' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
                   <Camera className="w-4 h-4" />
-                  <span className="hidden sm:inline">New Inspection</span>
+                  <span className="hidden sm:inline">Inspect</span>
                 </button>
-                <button
-                  onClick={goToHistory}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'history' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
+                <button onClick={goToHistory} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'history' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Inspection Center</span>
+                  <span className="hidden sm:inline">History</span>
                 </button>
-                <button
-                  onClick={goToItems}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'items' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
+                <button onClick={goToItems} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'items' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
                   <Package className="w-4 h-4" />
-                  <span className="hidden sm:inline">Item Center</span>
+                  <span className="hidden lg:inline">Items</span>
                 </button>
-                <button
-                  onClick={goToSuppliers}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'suppliers' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Vendor Center</span>
-                </button>
-                <button
-                  onClick={goToInspectors}
-                  className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'inspectors' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span className="hidden sm:inline">My Performance</span>
-                </button>
+
                 {isAdmin && (
-                  <button
-                    onClick={goToAdmin}
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}
-                  >
+                  <button onClick={goToAdmin} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
                     <Settings className="w-4 h-4" />
-                    <span className="hidden sm:inline">Admin</span>
+                    <span className="hidden lg:inline">Admin</span>
                   </button>
                 )}
 
-                <div className="h-4 w-px bg-slate-700 hidden sm:block"></div>
-                {/* Desktop: Show avatar + logout */}
-                <div className="hidden sm:flex items-center gap-4 text-sm">
-                  <UserAvatar name={user?.name || meta.inspector_name || 'Inspector'} />
-                  <button onClick={handleLogout} className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors">
+                <div className="h-4 w-px bg-slate-700 mx-2"></div>
+
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="hidden sm:block">
+                    <UserAvatar name={user?.name || meta.inspector_name || 'User'} />
+                  </div>
+                  <button onClick={handleLogout} className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors" title="Logout">
                     <LogOut className="w-4 h-4" />
-                    Logout
+                    <span className="hidden sm:inline">Logout</span>
                   </button>
                 </div>
-                {/* Mobile: Just logout icon */}
-                <button onClick={handleLogout} className="sm:hidden p-2 text-slate-400 hover:text-white transition-colors" title="Logout">
-                  <LogOut className="w-5 h-5" />
-                </button>
               </div>
             )}
           </div>
@@ -272,31 +246,22 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {inspectionState.error && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm animate-fadeIn">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm leading-5 font-medium text-red-800">
-                  Analysis Error
-                </h3>
-                <div className="mt-2 text-sm leading-5 text-red-700">
-                  <p>{inspectionState.error}</p>
-                </div>
-              </div>
-            </div>
+            <p className="text-sm font-medium text-red-800">{inspectionState.error}</p>
           </div>
         )}
 
-        {(step === 'login' || !isAuthenticated) && (
+        {(!isAuthenticated || step === 'login') && (
           <ErrorBoundary>
             <LoginView onLoginSuccess={handleLoginSuccess} />
           </ErrorBoundary>
         )}
 
-        {step === 'input' && (
+        {isAuthenticated && step === 'input' && (
           <ErrorBoundary>
             <div className="animate-fadeIn">
               <div className="text-center mb-10">
                 <h1 className="text-3xl font-bold text-gray-900">Visual Quality Inspection</h1>
-                <p className="mt-2 text-lg text-gray-600">Upload package or electrode images for instant defect detection and reporting.</p>
+                <p className="mt-2 text-lg text-gray-600">Automated electrode verification via AI.</p>
               </div>
               <InspectionForm
                 onSubmit={handleStartInspection}
@@ -306,17 +271,16 @@ const App: React.FC = () => {
                 items={items}
                 onItemSelect={setSelectedItemContext}
               />
-
               <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <FeatureCard icon={<Shield className="w-8 h-8 text-blue-500" />} title="Defect Detection" desc="Automatically identifies dents, tears, and coating issues." />
-                <FeatureCard icon={<Hammer className="w-8 h-8 text-orange-500" />} title="OCR & Validation" desc="Extracts batch numbers and validates branding." />
-                <FeatureCard icon={<Activity className="w-8 h-8 text-green-500" />} title="Trend Analysis" desc="Tracks supplier quality performance over time." />
+                <FeatureCard icon={<Shield className="w-8 h-8 text-blue-500" />} title="Defect Detection" desc="AI identifies surface issues instantly." />
+                <FeatureCard icon={<Hammer className="w-8 h-8 text-orange-500" />} title="OCR & Validation" desc="Batch validation via text recognition." />
+                <FeatureCard icon={<Activity className="w-8 h-8 text-green-500" />} title="Trend Analysis" desc="Track quality records over time." />
               </div>
             </div>
           </ErrorBoundary>
         )}
 
-        {step === 'report' && inspectionState.report && inspectionState.previewUrls.length > 0 && (
+        {isAuthenticated && step === 'report' && inspectionState.report && (
           <ErrorBoundary>
             <ReportView
               report={inspectionState.report}
@@ -332,51 +296,31 @@ const App: React.FC = () => {
           </ErrorBoundary>
         )}
 
-        {step === 'history' && (
+        {isAuthenticated && step === 'history' && (
           <ErrorBoundary>
-            <HistoryView
-              history={history}
-              onViewReport={handleSelectHistoryReport}
-              onBack={handleManualReset}
-            />
+            <HistoryView history={history} onViewReport={handleSelectHistoryReport} onBack={handleManualReset} />
           </ErrorBoundary>
         )}
 
-        {step === 'suppliers' && (
+        {isAuthenticated && step === 'items' && (
           <ErrorBoundary>
-            <SupplierView
-              history={history}
-              onBack={handleManualReset}
-              onViewReport={handleSelectHistoryReport}
-            />
+            <ItemCenter items={items} history={history} suppliers={suppliers} onBack={handleManualReset} onSaveItem={handleSaveItem} onDeleteItem={handleDeleteItem} />
           </ErrorBoundary>
         )}
 
-        {step === 'items' && (
+        {isAuthenticated && step === 'suppliers' && (
           <ErrorBoundary>
-            <ItemCenter
-              items={items}
-              history={history}
-              suppliers={suppliers}
-              onBack={handleManualReset}
-              onSaveItem={handleSaveItem}
-              onDeleteItem={handleDeleteItem}
-            />
+            <SupplierView history={history} onBack={handleManualReset} onViewReport={handleSelectHistoryReport} />
           </ErrorBoundary>
         )}
 
-        {step === 'inspectors' && (
+        {isAuthenticated && step === 'inspectors' && (
           <ErrorBoundary>
-            <InspectorView
-              history={history}
-              currentInspector={meta.inspector_name}
-              onBack={handleManualReset}
-              onViewReport={handleSelectHistoryReport}
-            />
+            <InspectorView history={history} currentInspector={meta.inspector_name} onBack={handleManualReset} onViewReport={handleSelectHistoryReport} />
           </ErrorBoundary>
         )}
 
-        {step === 'admin' && isAdmin && (
+        {isAuthenticated && step === 'admin' && isAdmin && (
           <ErrorBoundary>
             <AdminPanel onClose={handleManualReset} />
           </ErrorBoundary>
