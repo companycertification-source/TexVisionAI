@@ -1,10 +1,8 @@
 
 export const getEnv = (key: string): string => {
   // 1. Check for Vite's import.meta.env
-  // @ts-expect-error: checking for vite env
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-expect-error: checking for vite env property
-    const val = import.meta.env[key] || import.meta.env[`VITE_${key}`];
+    const val = (import.meta.env as Record<string, string>)[key] || (import.meta.env as Record<string, string>)[`VITE_${key}`];
     if (val) return val;
   }
 
@@ -30,16 +28,14 @@ export const getEnv = (key: string): string => {
  * - API_KEY (simple)
  */
 export const getApiKey = (): string => {
-  // @ts-expect-error: checking for vite env
   if (typeof import.meta !== 'undefined' && import.meta.env) {
-    // @ts-expect-error: checking for vite env property
     const env = import.meta.env;
 
     // Check all possible API key variable names
     const key = env.VITE_API_KEY ||
-      env.GEMINI_API_KEY ||
-      env.VITE_GEMINI_API_KEY ||
-      env.API_KEY;
+      (env as Record<string, string>).GEMINI_API_KEY ||
+      (env as Record<string, string>).VITE_GEMINI_API_KEY ||
+      (env as Record<string, string>).API_KEY;
     if (key) return key;
   }
 

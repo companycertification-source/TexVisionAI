@@ -1,7 +1,29 @@
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
+import * as Sentry from '@sentry/react';
+import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+
+// Initialize Sentry for error monitoring
+// Get your DSN from: https://sentry.io -> Create Project -> React
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN || '', // Add VITE_SENTRY_DSN to your env vars
+  environment: import.meta.env.MODE,
+  enabled: import.meta.env.PROD, // Only enable in production
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration({
+      maskAllText: false,
+      blockAllMedia: false,
+    }),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 0.1, // Capture 10% of transactions
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // 10% of sessions
+  replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+});
 
 interface ErrorBoundaryProps {
   children?: ReactNode;
@@ -32,6 +54,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
+    // Report to Sentry
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo.componentStack,
+      },
+    });
   }
 
   render() {
@@ -74,6 +102,8 @@ root.render(
     <ErrorBoundary>
       <AuthProvider>
         <App />
+        {/* Vercel Analytics - tracks page views automatically */}
+        <Analytics />
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

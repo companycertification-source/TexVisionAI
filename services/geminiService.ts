@@ -33,7 +33,6 @@ async function retryWithBackoff<T>(
 
       const delay = baseDelay * Math.pow(2, i);
       // Only log in development
-      // @ts-expect-error - import.meta.env is available in Vite
       if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
         console.warn(`Retry attempt ${i + 1}/${maxRetries} after ${delay}ms`);
       }

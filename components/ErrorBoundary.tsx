@@ -44,7 +44,6 @@ export class ErrorBoundary extends Component<Props, State> {
         this.props.onError?.(error, errorInfo);
 
         // Log to console in development
-        // @ts-expect-error - import.meta.env is available in Vite
         if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
             console.error('Error Boundary caught an error:', error, errorInfo);
         }
