@@ -185,6 +185,8 @@ export interface MetaData {
     minor_ac: number;
     minor_re: number;
   };
+  // Inspection Mode for cost optimization
+  inspection_mode?: 'quick' | 'detailed';
 }
 
 export interface AppState {

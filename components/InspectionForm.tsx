@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { MetaData, ItemMaster } from '../types';
-import { Upload, User, ShieldCheck, X, Plus, Camera, Building2, Calculator, Ruler, Package, Printer, Minus, QrCode, Layers, ArrowRight, ArrowLeft, Check, AlertCircle, Settings2, ChevronDown, FileText, Clock } from 'lucide-react';
+import { Upload, User, ShieldCheck, X, Plus, Camera, Building2, Calculator, Ruler, Package, Printer, Minus, QrCode, Layers, ArrowRight, ArrowLeft, Check, AlertCircle, Settings2, ChevronDown, FileText, Clock, Zap, Search } from 'lucide-react';
 import { useRateLimit } from '../hooks/useRateLimit';
+
+// Image limits for cost optimization (batch processing requires 4+ images)
+const MIN_IMAGES = 4;
+const MAX_IMAGES = 8;
 
 interface InspectionFormProps {
   onSubmit: (meta: MetaData, files: File[]) => void;
@@ -26,7 +30,8 @@ const INITIAL_META: MetaData = {
   sample_size: undefined,
   aql_level: 'II',
   aql_major: 2.5,
-  aql_minor: 4.0
+  aql_minor: 4.0,
+  inspection_mode: 'quick' // Default to Quick mode for cost savings
 };
 
 // --- ISO 2859-1 (ANSI/ASQ Z1.4) AQL Tables ---
@@ -207,9 +212,20 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles: File[] = Array.from(e.target.files);
-      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
-      setFiles(prev => [...prev, ...newFiles]);
-      setPreviewUrls(prev => [...prev, ...newPreviews]);
+
+      // Enforce MAX_IMAGES limit
+      const remainingSlots = MAX_IMAGES - files.length;
+      const filesToAdd = newFiles.slice(0, remainingSlots);
+
+      if (filesToAdd.length < newFiles.length) {
+        console.warn(`Only ${filesToAdd.length} of ${newFiles.length} images added (max ${MAX_IMAGES} allowed)`);
+      }
+
+      if (filesToAdd.length > 0) {
+        const newPreviews = filesToAdd.map(file => URL.createObjectURL(file));
+        setFiles(prev => [...prev, ...filesToAdd]);
+        setPreviewUrls(prev => [...prev, ...newPreviews]);
+      }
     }
   };
 
@@ -242,7 +258,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
       case 1: if (meta.inspection_type === 'incoming' && !meta.supplier_name) return false; return true;
       case 2: if (!meta.po_number || !meta.product_code) return false; return true;
       case 3: if (!meta.lot_size) return false; return true;
-      case 4: return files.length > 0;
+      case 4: return files.length >= MIN_IMAGES; // Require minimum 4 images for batch processing
       default: return true;
     }
   };
@@ -658,6 +674,57 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
               <p className="text-sm text-gray-500">Capture or upload images of the sampled items.</p>
             </div>
 
+            {/* Inspection Mode Toggle */}
+            <div className="flex items-center justify-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+              <span className="text-sm font-bold text-gray-700">Analysis Mode:</span>
+              <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setMeta(prev => ({ ...prev, inspection_mode: 'quick' }))}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${meta.inspection_mode === 'quick'
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  <Zap className="w-4 h-4" />
+                  Quick
+                  <span className="text-[10px] opacity-80">(Fast & Cost-Effective)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMeta(prev => ({ ...prev, inspection_mode: 'detailed' }))}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${meta.inspection_mode === 'detailed'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                >
+                  <Search className="w-4 h-4" />
+                  Detailed
+                  <span className="text-[10px] opacity-80">(High Accuracy)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Image Count Status */}
+            <div className={`flex items-center justify-between p-3 rounded-lg text-sm border ${files.length >= MIN_IMAGES
+                ? 'bg-green-50 text-green-700 border-green-100'
+                : 'bg-amber-50 text-amber-700 border-amber-100'
+              }`}>
+              <div className="flex items-center gap-2">
+                {files.length >= MIN_IMAGES ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                <span className="font-medium">
+                  {files.length} of {MIN_IMAGES}-{MAX_IMAGES} images
+                </span>
+              </div>
+              <span className="text-xs opacity-80">
+                {files.length < MIN_IMAGES
+                  ? `Add ${MIN_IMAGES - files.length} more for batch processing`
+                  : files.length >= MAX_IMAGES
+                    ? 'Maximum reached'
+                    : `${MAX_IMAGES - files.length} slots remaining`}
+              </span>
+            </div>
+
             {files.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {previewUrls.map((url, idx) => (
@@ -687,18 +754,20 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
                   </div>
                 ))}
 
-                <div className="flex flex-col gap-2">
-                  <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition min-h-[80px]">
-                    <Plus className="w-5 h-5 text-gray-400" />
-                    <span className="text-[10px] text-gray-500 mt-1">Upload</span>
-                    <input type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*" />
-                  </label>
-                  <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition min-h-[80px]">
-                    <Camera className="w-5 h-5 text-gray-400" />
-                    <span className="text-[10px] text-gray-500 mt-1">Camera</span>
-                    <input type="file" capture="environment" className="hidden" onChange={handleFileChange} accept="image/*" />
-                  </label>
-                </div>
+                {files.length < MAX_IMAGES && (
+                  <div className="flex flex-col gap-2">
+                    <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition min-h-[80px]">
+                      <Plus className="w-5 h-5 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 mt-1">Upload</span>
+                      <input type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*" />
+                    </label>
+                    <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-blue-400 transition min-h-[80px]">
+                      <Camera className="w-5 h-5 text-gray-400" />
+                      <span className="text-[10px] text-gray-500 mt-1">Camera</span>
+                      <input type="file" capture="environment" className="hidden" onChange={handleFileChange} accept="image/*" />
+                    </label>
+                  </div>
+                )}
               </div>
             )}
 
@@ -712,6 +781,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
                         Select photos
                       </span>
                     </div>
+                    <p className="text-xs text-gray-400">Upload {MIN_IMAGES}-{MAX_IMAGES} images</p>
                   </div>
                   <input type="file" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept="image/*" />
                 </div>
@@ -724,16 +794,10 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
                         Take Photo
                       </span>
                     </div>
+                    <p className="text-xs text-gray-400">Capture sample images</p>
                   </div>
                   <input type="file" capture="environment" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept="image/*" />
                 </div>
-              </div>
-            )}
-
-            {files.length === 0 && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 text-yellow-700 rounded-lg text-sm border border-yellow-100">
-                <AlertCircle className="w-4 h-4" />
-                Please upload at least one image to proceed with analysis.
               </div>
             )}
           </div>

@@ -43,22 +43,25 @@ async function retryWithBackoff<T>(
 }
 
 // Helper to resize image to reduce payload size and processing time
-const resizeImage = async (input: File | string): Promise<{ data: string; mimeType: string }> => {
+const resizeImage = async (
+  input: File | string,
+  maxDim: number = 1024,
+  quality: number = 0.8
+): Promise<{ data: string; mimeType: string }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
-      const MAX_DIM = 1024; // Resize to max 1024px for speed
 
-      if (width > MAX_DIM || height > MAX_DIM) {
+      if (width > maxDim || height > maxDim) {
         if (width > height) {
-          height = Math.round((height * MAX_DIM) / width);
-          width = MAX_DIM;
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
         } else {
-          width = Math.round((width * MAX_DIM) / height);
-          height = MAX_DIM;
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
         }
       }
 
@@ -71,8 +74,8 @@ const resizeImage = async (input: File | string): Promise<{ data: string; mimeTy
       }
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Convert to base64 jpeg with 0.8 quality
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      // Convert to base64 jpeg with specified quality
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
       const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
       if (match) {
         resolve({ mimeType: match[1] || 'image/jpeg', data: match[2] || '' });
@@ -183,13 +186,20 @@ export const analyzeInspection = async (
   }
 
   const ai = new GoogleGenAI({ apiKey });
-  const modelId = "gemini-2.5-flash";
+
+  // Select model based on inspection mode (quick = lite/cheaper, detailed = full)
+  const isQuickMode = meta.inspection_mode === 'quick';
+  const modelId = isQuickMode ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
+
+  // Use smaller image dimensions for quick mode to further reduce costs
+  const maxImageDim = isQuickMode ? 768 : 1024;
+  const imageQuality = isQuickMode ? 0.65 : 0.8;
 
   try {
     // Optimize: Process inputs (files or base64) to Generative Parts WITH RESIZING
     const inspectionImageParts = await Promise.all(inputs.map(async (input) => {
-      // Use resizeImage instead of raw getInlineData
-      const { data, mimeType } = await resizeImage(input);
+      // Use resizeImage with mode-specific dimensions and quality
+      const { data, mimeType } = await resizeImage(input, maxImageDim, imageQuality);
       return {
         inlineData: { data, mimeType }
       };
