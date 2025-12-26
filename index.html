@@ -1,40 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Deployment Version: 2.5.1 - 2025-12-18 -->
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WeldVision AI - Quality Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-       @keyframes fadeIn {
-         from { opacity: 0; transform: translateY(10px); }
-         to { opacity: 1; transform: translateY(0); }
-       }
-       .animate-fadeIn {
-         animation: fadeIn 0.4s ease-out forwards;
-       }
-       
-       @media print {
-         body {
-           -webkit-print-color-adjust: exact !important;
-           print-color-adjust: exact !important;
-           background-color: white !important;
-         }
-         .no-print {
-           display: none !important;
-         }
-         .animate-fadeIn {
-           animation: none !important;
-           opacity: 1 !important;
-           transform: none !important;
-         }
-         /* Ensure charts and images don't break across pages awkwardly */
-         img, svg, .recharts-responsive-container {
-           break-inside: avoid;
-         }
-       }
-    </style>
+
+<head>
+  <!-- Deployment Version: 2.5.1 - 2025-12-18 -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeldVision AI - Quality Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        background-color: white !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .animate-fadeIn {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      /* Ensure charts and images don't break across pages awkwardly */
+      img,
+      svg,
+      .recharts-responsive-container {
+        break-inside: avoid;
+      }
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -50,10 +64,11 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

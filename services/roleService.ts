@@ -98,15 +98,24 @@ export const hasPermission = (role: UserRole, permission: keyof RolePermissions)
  */
 export const getCurrentUserRole = async (): Promise<UserRole | null> => {
     if (!isSupabaseConfigured() || !supabase) {
-        console.warn('[Role] Supabase not configured');
-        return null;
+        console.warn('[Role] Supabase not configured, defaulting to viewer');
+        return 'viewer';
     }
 
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError) {
+            console.error('[Role] Auth error:', authError);
+            return 'viewer';
+        }
+
         if (!user) {
+            console.log('[Role] No authenticated user');
             return null;
         }
+
+        console.log('[Role] Fetching role for user:', user.email, 'id:', user.id);
 
         const { data, error } = await supabase
             .from('user_roles')
@@ -115,16 +124,25 @@ export const getCurrentUserRole = async (): Promise<UserRole | null> => {
             .single();
 
         if (error) {
-            // If no role found, user might be new - return default role
+            console.error('[Role] Database error:', error.code, error.message);
+
+            // If no role found, user might be new - create default role
             if (error.code === 'PGRST116') {
                 console.log('[Role] No role found for user, creating default viewer role');
                 await createDefaultRole(user.id, user.email || '');
                 return 'viewer';
             }
-            console.error('[Role] Error fetching role:', error);
+
+            // Table doesn't exist
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                console.error('[Role] user_roles table does not exist! Run the SQL migration.');
+                return 'viewer';
+            }
+
             return 'viewer'; // Default to viewer on error
         }
 
+        console.log('[Role] User role fetched:', data?.role);
         return data?.role as UserRole || 'viewer';
     } catch (error) {
         console.error('[Role] Error getting user role:', error);

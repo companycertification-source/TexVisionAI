@@ -41,7 +41,9 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         try {
+            console.log('[RoleContext] Calling getCurrentUserRole...');
             const userRole = await getCurrentUserRole();
+            console.log('[RoleContext] Role detected:', userRole);
             setRole(userRole);
         } catch (error) {
             console.error('[RoleContext] Error fetching role:', error);

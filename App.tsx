@@ -46,7 +46,12 @@ const App: React.FC = () => {
   const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToReport, goBack } = useAppNavigation();
 
   // Role-based access
-  const { isAdmin, role } = useRole();
+  const { isAdmin, role, isLoading: isRoleLoading } = useRole();
+  useEffect(() => {
+    if (!isRoleLoading) {
+      console.log('[App] Current role detected:', role, 'isAdmin:', isAdmin);
+    }
+  }, [role, isAdmin, isRoleLoading]);
 
   // Data State
   const [history, setHistory] = useState<InspectionReport[]>([]);

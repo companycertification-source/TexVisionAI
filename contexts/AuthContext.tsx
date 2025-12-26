@@ -373,17 +373,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Logout
     const logout = async () => {
+        console.log('[Auth] logout function called');
         const currentUser = state.user;
 
         try {
             // Clear Supabase session
             if (isSupabaseConfigured() && supabase) {
-                await supabase.auth.signOut();
+                console.log('[Auth] Attempting Supabase signOut...');
+                const { error } = await supabase.auth.signOut();
+                if (error) console.error('[Auth] Supabase signOut error:', error);
+                else console.log('[Auth] Supabase signOut completed');
             }
 
             // Clear local storage
+            console.log('[Auth] Clearing session keys...');
             localStorage.removeItem(SESSION_KEY);
+            // Clear any other auth remnants
+            localStorage.removeItem('sb-token');
+            localStorage.removeItem('supabase.auth.token');
 
+            console.log('[Auth] Updating local state to null...');
             setState({
                 user: null,
                 isAuthenticated: false,
@@ -393,10 +402,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Audit log
             if (currentUser) {
+                console.log('[Auth] Recording logout audit log...');
                 auditLog.logout(currentUser);
             }
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('[Auth] Logout catch block error:', error);
             // Still clear local state even if Supabase logout fails
             localStorage.removeItem(SESSION_KEY);
             setState({
