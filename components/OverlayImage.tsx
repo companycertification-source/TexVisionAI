@@ -220,10 +220,23 @@ export const OverlayImage: React.FC<OverlayImageProps> = ({ imageUrl, overlays, 
                 const by = bbox[1] ?? 0;
                 const bw = bbox[2] ?? 0;
                 const bh = bbox[3] ?? 0;
-                const left = geometry.x + (bx * geometry.w);
-                const top = geometry.y + (by * geometry.h);
-                const width = bw * geometry.w;
-                const height = bh * geometry.h;
+
+                // Add padding to make overlays more visible (10% expansion in each direction)
+                const padding = 0.02; // 2% padding
+                const paddedX = Math.max(0, bx - padding);
+                const paddedY = Math.max(0, by - padding);
+                const paddedW = Math.min(1 - paddedX, bw + padding * 2);
+                const paddedH = Math.min(1 - paddedY, bh + padding * 2);
+
+                const left = geometry.x + (paddedX * geometry.w);
+                const top = geometry.y + (paddedY * geometry.h);
+                const width = paddedW * geometry.w;
+                const height = paddedH * geometry.h;
+
+                // Ensure minimum size for visibility
+                const minSize = 30;
+                const finalWidth = Math.max(width, minSize);
+                const finalHeight = Math.max(height, minSize);
 
                 return (
                   <div
@@ -232,15 +245,15 @@ export const OverlayImage: React.FC<OverlayImageProps> = ({ imageUrl, overlays, 
                     style={{
                       left: `${left}px`,
                       top: `${top}px`,
-                      width: `${width}px`,
-                      height: `${height}px`,
+                      width: `${finalWidth}px`,
+                      height: `${finalHeight}px`,
                       animationDelay: `${idx * 100}ms`
                     }}
                   >
                     <div className={`w-full h-full rounded-sm ${getStyleClasses(overlay)}`}>
                       {(showLabels) && (
                         <div
-                          className={`absolute bottom-full left-0 mb-1 flex items-center gap-1 text-white text-[10px] px-2 py-1 rounded-md shadow-md backdrop-blur-sm z-10 whitespace-nowrap print:shadow-none print:mb-0 ${getLabelColor(overlay)}`}
+                          className={`absolute bottom-full left-0 mb-2 flex items-center gap-1 text-white text-[11px] px-3 py-1.5 rounded-md shadow-lg backdrop-blur-sm z-10 whitespace-nowrap print:shadow-none print:mb-0 ${getLabelColor(overlay)}`}
                           // Scale inverse to zoom to keep text size constant. 
                           // transform-origin: bottom-left ensures it stays anchored to the top-left corner of the box.
                           style={{ transform: `scale(${1 / scale})`, transformOrigin: 'bottom left' }}
