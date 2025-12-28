@@ -849,7 +849,196 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
         </div>
       </div>
 
-      {/* Modal implementations (Tags, etc.) omitted for brevity but would persist here */}
+      {/* TAGS MODAL */}
+      {showTagsModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto no-print-bg">
+          <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 no-print">
+              <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                <Printer className="w-5 h-5 text-blue-600" /> Print Traceability Tags
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrintTags}
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Print
+                </button>
+                <button
+                  onClick={toggleTagsModal}
+                  className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 overflow-y-auto bg-gray-100 printable-area">
+              <div className="grid grid-cols-2 gap-4 print:grid-cols-2 print:gap-4">
+                {Array.from({ length: tagQuantity }).map((_, i) => (
+                  <div key={i} className="bg-white p-4 rounded-xl border border-gray-300 shadow-sm flex gap-4 print:break-inside-avoid print:border-gray-800">
+                    <div className="w-24 h-24 flex-shrink-0 bg-gray-50 rounded p-1">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`}
+                        alt="QR"
+                        className="w-full h-full object-contain mix-blend-multiply"
+                      />
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-bold text-lg text-black leading-tight mb-1">SAMPLE #{i + 1}</h4>
+                        <span className="bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
+                          {meta.inspection_type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 text-xs text-black font-mono mt-2">
+                        <p><span className="text-gray-500">PO:</span> <span className="font-bold">{meta.po_number}</span></p>
+                        <p><span className="text-gray-500">Style:</span> <span className="font-bold">{meta.style_number}</span></p>
+                        <p><span className="text-gray-500">Date:</span> <span>{new Date().toLocaleDateString()}</span></p>
+                        {meta.batch_lot_number && <p><span className="text-gray-500">Batch:</span> <span>{meta.batch_lot_number}</span></p>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 text-center text-gray-500 text-xs no-print">
+                <p>Showing {tagQuantity} tags based on sample size.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PLAN MODAL */}
+      {showPlanModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto no-print-bg">
+          <div className="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 no-print">
+              <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600" /> Inspection Plan
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePrintTags}
+                  className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Printer className="w-4 h-4" /> Print
+                </button>
+                <button
+                  onClick={() => setShowPlanModal(false)}
+                  className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 overflow-y-auto printable-area">
+              <div className="border-2 border-black p-8 bg-white print:border-black">
+                <div className="flex justify-between items-start mb-8 border-b-2 border-black pb-4">
+                  <div>
+                    <h1 className="text-3xl font-black text-black uppercase tracking-tight">Inspection Plan</h1>
+                    <p className="text-gray-600 font-bold mt-1">Ref: {meta.po_number} / {meta.style_number}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="bg-black text-white font-bold px-3 py-1 inline-block mb-1">
+                      {meta.inspection_type.toUpperCase().replace('_', ' ')}
+                    </div>
+                    <p className="text-sm text-gray-600">Generated: {new Date().toLocaleString()}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <h4 className="font-bold text-gray-500 uppercase text-xs mb-2 border-b border-gray-200 pb-1">Context</h4>
+                    <dl className="grid grid-cols-[80px_1fr] gap-y-1 text-sm">
+                      <dt className="text-gray-500">Factory:</dt>
+                      <dd className="font-bold">{meta.supplier_name}</dd>
+                      <dt className="text-gray-500">Brand:</dt>
+                      <dd className="font-bold">{meta.brand}</dd>
+                      <dt className="text-gray-500">Inspector:</dt>
+                      <dd className="font-bold">{inspectorName}</dd>
+                      <dt className="text-gray-500">Item:</dt>
+                      <dd className="font-bold">{selectedItem?.name || 'N/A'}</dd>
+                    </dl>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-500 uppercase text-xs mb-2 border-b border-gray-200 pb-1">Sampling (ISO 2859-1)</h4>
+                    <dl className="grid grid-cols-[100px_1fr] gap-y-1 text-sm">
+                      <dt className="text-gray-500">Lot Size:</dt>
+                      <dd className="font-bold">{meta.lot_size} units</dd>
+                      <dt className="text-gray-500">Sample Size:</dt>
+                      <dd className="font-bold text-blue-600">{meta.sample_size} units</dd>
+                      <dt className="text-gray-500">AQL Level:</dt>
+                      <dd className="font-bold">Level {meta.aql_level} (Code {aqlPlan?.code})</dd>
+                    </dl>
+                    {aqlPlan && (
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-gray-100 p-2 rounded">
+                          <span className="block font-bold text-gray-500 text-[10px]">MAJOR ({meta.aql_major})</span>
+                          <span className="font-bold text-black">Ac: {aqlPlan.major.ac} | Re: {aqlPlan.major.re}</span>
+                        </div>
+                        <div className="bg-gray-100 p-2 rounded">
+                          <span className="block font-bold text-gray-500 text-[10px]">MINOR ({meta.aql_minor})</span>
+                          <span className="font-bold text-black">Ac: {aqlPlan.minor.ac} | Re: {aqlPlan.minor.re}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-gray-500 uppercase text-xs mb-2 border-b border-gray-200 pb-1">Quality Standards & Spec Limits</h4>
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded text-sm font-mono text-black whitespace-pre-wrap">
+                    {meta.spec_limits || "No specific limits defined."}
+                  </div>
+                </div>
+
+                <div className="mt-12 pt-4 border-t-2 border-black flex justify-between text-xs text-gray-400">
+                  <span>TexVision AI System</span>
+                  <span>QMS-FORM-001 rev.2</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Styles for Printing */}
+      <style>{`
+        @media print {
+          body > *:not(.fixed) {
+            display: none !important;
+          }
+          .no-print, .no-print-bg {
+            display: none !important;
+          }
+           /* Ensure modal content is visible and takes up full width */
+          .fixed {
+            position: relative !important;
+            inset: auto !important;
+            z-index: auto !important;
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+          }
+           /* Reset specific modal containers */
+          .fixed > div {
+             box-shadow: none !important;
+             max-width: none !important;
+             width: 100% !important;
+             max-height: none !important;
+          }
+           /* Make the scrollable content area visible */
+          .printable-area {
+             overflow: visible !important;
+             padding: 0 !important;
+          }
+        }
+      `}</style>
+
     </div>
   );
 };
