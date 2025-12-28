@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { InspectionReport } from '../types';
 import { Calendar, Search, FileText, ChevronRight, ArrowLeft, Layers, BarChart3, PieChart as PieIcon, TrendingUp, AlertOctagon, CheckCircle2, XCircle, Clock, Filter, ImageOff } from 'lucide-react';
@@ -109,7 +107,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onViewReport,
         report.inspection_header.po_number.toLowerCase().includes(searchLower) ||
         report.inspection_header.supplier_name.toLowerCase().includes(searchLower) ||
         (report.inspection_header.batch_lot_number || '').toLowerCase().includes(searchLower) ||
-        (report.inspection_header.product_code || '').toLowerCase().includes(searchLower);
+        (report.inspection_header.style_number || '').toLowerCase().includes(searchLower);
 
       return matchesDate && matchesShift && matchesSearch;
     }).sort((a, b) => new Date(b.inspection_header.inspection_date_time).getTime() - new Date(a.inspection_header.inspection_date_time).getTime());
@@ -387,7 +385,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onViewReport,
                           <div className="text-xs text-gray-500">{report.inspection_header.batch_lot_number || "No Batch ID"}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-bold text-gray-900 text-xs mb-0.5">{report.inspection_header.product_code || 'Unknown Item'}</div>
+                          <div className="font-bold text-gray-900 text-xs mb-0.5">{report.inspection_header.style_number || 'Unknown Item'}</div>
                           <div className="text-gray-600 text-xs font-medium max-w-[180px] truncate" title={report.inspection_header.supplier_name}>
                             {report.inspection_header.supplier_name || "Internal Production"}
                           </div>

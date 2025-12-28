@@ -148,9 +148,31 @@ export const useInspection = (
             return true; // Success
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            let finalError = errorMessage || 'Failed to analyze image. Please check API Key and try again.';
+
+            // Handle raw JSON errors from Google API
+            if (errorMessage.includes('{') && errorMessage.includes('error')) {
+                try {
+                    // Try to extract the JSON part if it's mixed with other text
+                    const jsonMatch = errorMessage.match(/\{.*"error":.*\}/s);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        if (parsed.error?.code === 429 || parsed.error?.status === 'RESOURCE_EXHAUSTED') {
+                            finalError = "⚠️ AI Usage Limit Reached (Quota Exceeded). Please wait a minute or use a different API key.";
+                        } else if (parsed.error?.message) {
+                            finalError = `AI Error: ${parsed.error.message}`;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to parse error JSON", e);
+                }
+            } else if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota')) {
+                finalError = "⚠️ AI Usage Limit Reached. Please wait a moment before trying again.";
+            }
+
             setInspectionState((prev) => ({
                 ...prev,
-                error: errorMessage || 'Failed to analyze image. Please check API Key and try again.',
+                error: finalError,
             }));
             return false;
         } finally {

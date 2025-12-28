@@ -15,7 +15,7 @@ describe('dataService', () => {
 
     describe('getHistory', () => {
         it('should return empty array when no data exists', async () => {
-            localStorage.removeItem('weldvision_history_v1');
+            localStorage.removeItem('texvision_history_v1');
             const history = await dataService.getHistory();
             expect(Array.isArray(history)).toBe(true);
         });
@@ -34,7 +34,7 @@ describe('dataService', () => {
                     inspection_type: 'incoming',
                     supplier_name: 'Test Supplier',
                     brand: 'Test',
-                    product_code: 'TEST-001',
+                    style_number: 'TEST-001',
                     po_number: 'PO-001',
                     invoice_number: '',
                     batch_lot_number: '',
@@ -46,16 +46,14 @@ describe('dataService', () => {
                 images: [],
                 lot_assessment: {
                     lot_status: 'accept',
-                    total_cartons_inspected: 1,
-                    total_packets_inspected: 1,
-                    total_electrodes_sampled: 1,
+                    total_items_inspected: 10,
                     defect_summary: [],
                     critical_defects_present: false,
                     critical_defect_details: [],
                     conformity_summary: {
                         product_match_spec: true,
                         branding_match_spec: true,
-                        batch_and_dates_present: true
+                        labeling_present: true
                     },
                     trend_comment: 'Test'
                 }
@@ -75,7 +73,7 @@ describe('dataService', () => {
                     inspection_type: 'incoming',
                     supplier_name: 'Test',
                     brand: 'Test',
-                    product_code: 'TEST',
+                    style_number: 'TEST',
                     po_number: 'PO-LARGE',
                     invoice_number: '',
                     batch_lot_number: '',
@@ -87,16 +85,14 @@ describe('dataService', () => {
                 images: [],
                 lot_assessment: {
                     lot_status: 'accept',
-                    total_cartons_inspected: 1,
-                    total_packets_inspected: 1,
-                    total_electrodes_sampled: 1,
+                    total_items_inspected: 10,
                     defect_summary: [],
                     critical_defects_present: false,
                     critical_defect_details: [],
                     conformity_summary: {
                         product_match_spec: true,
                         branding_match_spec: true,
-                        batch_and_dates_present: true
+                        labeling_present: true
                     },
                     trend_comment: 'Test'
                 },

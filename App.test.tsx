@@ -26,8 +26,27 @@ vi.mock('./hooks/useAppNavigation', () => ({
         goToSuppliers: vi.fn(),
         goToItems: vi.fn(),
         goToInspectors: vi.fn(),
+        goToAdmin: vi.fn(),
         goToReport: vi.fn(),
         goBack: vi.fn(),
+    })
+}));
+
+// Mock Contexts
+vi.mock('./contexts/AuthContext', () => ({
+    useAuth: () => ({
+        user: null,
+        isAuthenticated: false,
+        login: vi.fn(),
+        logout: vi.fn(),
+    })
+}));
+
+vi.mock('./contexts/RoleContext', () => ({
+    useRole: () => ({
+        role: 'user',
+        isAdmin: false,
+        isLoading: false,
     })
 }));
 
@@ -50,7 +69,8 @@ describe('App', () => {
         };
 
         render(<App />);
-        expect(screen.getByText(/WeldVision AI/i)).toBeInTheDocument();
+        expect(screen.getByText(/TexVision AI/i)).toBeInTheDocument();
+        expect(screen.getByText(/Textile Inspection Portal/i)).toBeInTheDocument();
 
         console.error = originalError;
     });

@@ -9,6 +9,7 @@ export interface BBox {
 
 export interface Defect {
   class: string;
+  category?: 'fabric' | 'workmanship' | 'trims' | 'packaging' | 'other';
   severity: 'minor' | 'major' | 'critical';
   description: string;
   count: number;
@@ -24,28 +25,29 @@ export interface Overlay {
 }
 
 export interface InspectionObject {
-  type: string;
+  type: string; // e.g., "fabric_roll", "garment_folded", "garment_hanging", "carton"
   bbox: number[];
   damage_class?: string;
   cleanliness?: string;
-  artwork_conformity?: string;
+  packaging_conformity?: string;
 }
 
-export interface Electrode {
+export interface TextileItem {
   bbox: number[];
-  geometry?: string;
-  coating_condition?: string[];
-  tip_condition?: string;
-  marking_status?: string;
+  fabric_type?: string;
+  color_shade?: string;
+  pattern_match?: string; // "matched", "mismatched", "not_applicable"
+  finish_quality?: string; // "smooth", "wrinkled", "pilling", "unknown"
 }
 
 export interface OCRResults {
   brand: string;
-  grade: string;
-  size: string;
+  style_number: string; // Replaces product_code/grade
+  material_composition: string; // e.g., "100% Cotton"
+  size_label: string; // e.g., "L", "XL", "32"
   batch_lot_number: string;
   mfg_date: string;
-  exp_date: string;
+  care_instructions: string[];
   other_text: string[];
   confidence: number;
 }
@@ -55,12 +57,11 @@ export interface ImageResult {
   status: 'accepted' | 'accepted_with_minor_defects' | 'rejected';
   ocr_results: OCRResults;
   objects: InspectionObject[];
-  electrodes: Electrode[];
+  items: TextileItem[];
   defects: Defect[];
   counts: {
     visible_cartons: number;
-    visible_packets: number;
-    visible_electrodes: number;
+    visible_items: number;
   };
   overlays: Overlay[];
 }
@@ -74,16 +75,14 @@ export interface DefectSummary {
 
 export interface LotAssessment {
   lot_status: 'accept' | 'accept_with_remarks' | 'reject';
-  total_cartons_inspected: number;
-  total_packets_inspected: number;
-  total_electrodes_sampled: number;
+  total_items_inspected: number;
   defect_summary: DefectSummary[];
   critical_defects_present: boolean;
   critical_defect_details: string[];
   conformity_summary: {
     product_match_spec: boolean;
     branding_match_spec: boolean;
-    batch_and_dates_present: boolean;
+    labeling_present: boolean;
   };
   trend_comment: string;
 }
@@ -116,7 +115,7 @@ export interface InspectionHeader {
   inspection_type: string;
   supplier_name: string;
   brand: string;
-  product_code: string;
+  style_number: string; // Replaces product_code
   po_number: string;
   invoice_number: string;
   batch_lot_number: string;
@@ -130,7 +129,7 @@ export interface InspectionReport {
   inspection_header: InspectionHeader;
   images: ImageResult[];
   lot_assessment: LotAssessment;
-  imageUrls?: string[]; // Changed to array to store multiple images
+  imageUrls?: string[];
   summary?: string;
   performance_insights?: PerformanceInsights;
 }
@@ -138,34 +137,32 @@ export interface InspectionReport {
 export interface ItemMaster {
   id: string;
   name: string;
-  code: string;
+  code: string; // Maps to style_number
   category: string;
-  item_type: 'buy' | 'sell'; // Classification
-  preferred_supplier?: string; // Only for 'buy' items
-  uom?: string; // Unit of Measure
-  dimensions?: string; // e.g. "Dia: 3.2mm, L: 350mm"
+  item_type: 'buy' | 'sell';
+  preferred_supplier?: string;
+  uom?: string;
+  dimensions?: string;
   description: string;
   specifications: string;
   quality_checkpoints?: string[];
   reference_image_url?: string;
-  // New field for analysis standards
   standard_images?: {
-    accepted: string[]; // List of base64 strings (max 2)
-    rejected: string[]; // List of base64 strings (max 2)
+    accepted: string[];
+    rejected: string[];
   };
-  // AQL Preferences
   aql_config?: {
-    level: 'I' | 'II' | 'III'; // General Inspection Level
-    major: number; // e.g., 2.5
-    minor: number; // e.g., 4.0
+    level: 'I' | 'II' | 'III';
+    major: number;
+    minor: number;
   };
 }
 
 export interface MetaData {
-  inspection_type: 'incoming' | 'finished_goods' | 'loose_packed';
+  inspection_type: 'incoming' | 'finished_goods' | 'in_process';
   supplier_name: string;
   brand: string;
-  product_code: string;
+  style_number: string; // Replaces product_code
   po_number: string;
   invoice_number?: string;
   batch_lot_number?: string;
@@ -185,7 +182,6 @@ export interface MetaData {
     minor_ac: number;
     minor_re: number;
   };
-  // Inspection Mode for cost optimization
   inspection_mode?: 'quick' | 'detailed';
 }
 
@@ -195,8 +191,8 @@ export interface AppState {
   meta: MetaData;
   history: InspectionReport[];
   items: ItemMaster[];
-  selectedFiles: File[]; // Changed from single File to File[]
-  previewUrls: string[]; // Changed from single URL to string[]
+  selectedFiles: File[];
+  previewUrls: string[];
   report: InspectionReport | null;
   summary: string | null;
   error: string | null;

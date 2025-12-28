@@ -47,7 +47,7 @@ const defaultState: AuthState = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Session storage key
-const SESSION_KEY = 'weldvision_auth_session';
+const SESSION_KEY = 'texvision_auth_session';
 const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // Provider component
@@ -298,7 +298,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const demoLogin = () => {
         const user: AuthUser = {
             id: 'demo-inspector',
-            email: 'demo@weldvision.ai',
+            email: 'demo@texvision.ai',
             name: 'Demo Inspector',
             role: 'inspector',
             createdAt: new Date().toISOString(),

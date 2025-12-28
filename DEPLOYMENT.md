@@ -1,4 +1,4 @@
-# WeldVision AI - Deployment Guide
+# TexVision AI - Deployment Guide
 
 ## 🚀 Production Deployment
 

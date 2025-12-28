@@ -1,4 +1,4 @@
-# WeldVision AI - Production Checklist
+# TexVision AI - Production Checklist
 
 ## Pre-Deployment Verification
 

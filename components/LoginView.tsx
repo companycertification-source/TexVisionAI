@@ -49,10 +49,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 <Shield className="h-10 w-10 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">WeldVision AI</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">TexVision AI</h1>
             <p className="text-slate-400 mt-2 font-medium">Quality Control & Inspection Portal</p>
             <p className="text-slate-500 text-xs mt-4 leading-relaxed border-t border-slate-800 pt-4">
-              Streamline quality control with AI-powered visual inspection for incoming and finished welding electrodes.
+              Streamline quality control with AI-powered visual inspection for fabrics, garments, and trims.
             </p>
           </div>
 
@@ -210,7 +210,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               {/* 1. The Workflow (Infographic Style) */}
               <section>
                 <div className="text-center mb-8">
-                  <h3 className="text-lg font-bold text-gray-900">How WeldVision Works</h3>
+                  <h3 className="text-lg font-bold text-gray-900">How TexVision Works</h3>
                   <p className="text-gray-500 text-sm">Three simple steps from physical stock to digital insight.</p>
                 </div>
 
@@ -228,7 +228,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full absolute top-0 right-1/4 translate-x-2">STEP 1</div>
                     <h4 className="font-bold text-gray-900 mb-2">Configure & Capture</h4>
                     <p className="text-sm text-gray-500 leading-relaxed px-4">
-                      Select context (Incoming/FG), calculate ISO 2859-1 sample sizes, and capture images of electrodes or cartons.
+                      Select context (Incoming/FG), calculate ISO 2859-1 sample sizes, and capture images of fabric rolls or garments.
                     </p>
                   </div>
 
@@ -242,7 +242,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     <div className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full absolute top-0 right-1/4 translate-x-2">STEP 2</div>
                     <h4 className="font-bold text-gray-900 mb-2">Gemini 2.5 Analysis</h4>
                     <p className="text-sm text-gray-500 leading-relaxed px-4">
-                      Vision model detects defects (dents, coating issues), verifies against Item Master standards, and reads OCR text.
+                      Vision model detects defects (holes, stairs, shading), verifies against Item Master standards, and reads OCR text.
                     </p>
                   </div>
 
@@ -265,7 +265,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               {/* 2. Key Benefits (Grid) */}
               <section className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
                 <div className="text-center mb-8">
-                  <h3 className="text-lg font-bold text-gray-900">Why Use WeldVision?</h3>
+                  <h3 className="text-lg font-bold text-gray-900">Why Use TexVision?</h3>
                   <p className="text-gray-500 text-sm">Replacing manual subjectivity with digital precision.</p>
                 </div>
 

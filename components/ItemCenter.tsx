@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ItemMaster, InspectionReport } from '../types';
-import { Search, Plus, Package, Edit2, Save, X, ArrowLeft, Trash2, QrCode, CheckSquare, ListChecks, Upload, ShoppingBag, Tag, Factory, ImagePlus, ThumbsUp, ThumbsDown, Activity, AlertCircle, History, Scale, ChevronDown, Filter, Ruler } from 'lucide-react';
+import { Search, Plus, Shirt, Edit2, Save, X, ArrowLeft, Trash2, QrCode, CheckSquare, ListChecks, Upload, ShoppingBag, Tag, Factory, ImagePlus, ThumbsUp, ThumbsDown, Activity, AlertCircle, History, Scale, ChevronDown, Filter, Ruler, Scissors } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -55,7 +55,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
     // Group reports by product code first
     const reportsByCode: Record<string, InspectionReport[]> = {};
     history.forEach(r => {
-      const code = r.inspection_header.product_code;
+      const code = r.inspection_header.style_number; // Updated to style_number
       if (!reportsByCode[code]) reportsByCode[code] = [];
       reportsByCode[code].push(r);
     });
@@ -72,9 +72,17 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
       const passed = itemReports.filter(r => r.lot_assessment.lot_status === 'accept').length;
       const passRate = (passed / total) * 100;
 
-      // Sum defect rates
-      const totalDefectRate = itemReports.reduce((sum, r) =>
-        sum + (r.performance_insights?.supplier_performance?.current_lot_defect_rate_percent || 0), 0);
+      // Sum defect rates (calculate manually if not present)
+      const totalDefectRate = itemReports.reduce((sum, r) => {
+        if (r.performance_insights?.supplier_performance?.current_lot_defect_rate_percent) {
+          return sum + r.performance_insights.supplier_performance.current_lot_defect_rate_percent;
+        }
+        // Fallback calculation
+        const defectCount = r.lot_assessment.defect_summary.reduce((acc, d) => acc + d.count, 0);
+        const totalItems = r.lot_assessment.total_items_inspected || 1;
+        const rate = (defectCount / totalItems) * 100;
+        return sum + rate;
+      }, 0);
       const avgDefectRate = totalDefectRate / total;
 
       // Top defects aggregation
@@ -238,7 +246,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
         <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Package className="w-6 h-6 text-blue-600" />
+              <Shirt className="w-6 h-6 text-blue-600" />
               {editForm.id && items.some(i => i.id === editForm.id) ? 'Edit Master Item' : 'New Master Item'}
             </h2>
             <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-gray-700">
@@ -262,7 +270,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                         onChange={() => setEditForm({ ...editForm, item_type: 'sell' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium flex items-center gap-1"><Tag className="w-3 h-3 text-green-600" /> Finished Good (Sell)</span>
+                      <span className="text-sm font-medium flex items-center gap-1"><Tag className="w-3 h-3 text-green-600" /> Finished Garment</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -272,7 +280,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                         onChange={() => setEditForm({ ...editForm, item_type: 'buy' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm font-medium flex items-center gap-1"><ShoppingBag className="w-3 h-3 text-orange-600" /> Raw Material (Buy)</span>
+                      <span className="text-sm font-medium flex items-center gap-1"><ShoppingBag className="w-3 h-3 text-orange-600" /> Fabric / Trim</span>
                     </label>
                   </div>
                 </div>
@@ -284,19 +292,19 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                     value={editForm.name}
                     onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g. E6013 Electrode"
+                    placeholder="e.g. Cotton Crew Neck T-Shirt"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Item Code / SKU</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Style No / SKU</label>
                     <input
                       type="text"
                       value={editForm.code}
                       onChange={e => setEditForm({ ...editForm, code: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g. E6013-3.2"
+                      placeholder="e.g. SH-2024-01"
                     />
                   </div>
                   <div>
@@ -306,14 +314,14 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       value={editForm.uom || ''}
                       onChange={e => setEditForm({ ...editForm, uom: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g. kg, pcs, roll"
+                      placeholder="e.g. pcs, m, yds"
                     />
                   </div>
                 </div>
 
                 {/* Dimensions Field */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-1">Product Dimensions</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Dimensions / Size Range</label>
                   <div className="relative">
                     <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -321,7 +329,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       value={editForm.dimensions || ''}
                       onChange={e => setEditForm({ ...editForm, dimensions: e.target.value })}
                       className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g. Diameter: 3.2mm, Length: 350mm"
+                      placeholder="e.g. S - XXL"
                     />
                   </div>
                 </div>
@@ -334,14 +342,14 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">-- Select Category --</option>
-                    <option value="Electrodes">Electrodes</option>
-                    <option value="Wire">Wire</option>
-                    <option value="Flux">Flux</option>
-                    <option value="Raw Material">Raw Material</option>
-                    <option value="Packaging">Packaging</option>
-                    <option value="Equipment">Equipment</option>
-                    <option value="Consumables">Consumables</option>
-                    <option value="Other">Other</option>
+                    <option value="Tops">Tops</option>
+                    <option value="Bottoms">Bottoms</option>
+                    <option value="Outerwear">Outerwear</option>
+                    <option value="Dresses">Dresses</option>
+                    <option value="Fabric - Knits">Fabric - Knits</option>
+                    <option value="Fabric - Wovens">Fabric - Wovens</option>
+                    <option value="Trims">Trims</option>
+                    <option value="Accessories">Accessories</option>
                   </select>
                 </div>
 
@@ -437,17 +445,17 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                   />
                 </div>
 
-                {/* Main Reference Image (Catalogue Cover) - Optional */}
+                {/* Main Reference Image (Style Reference) - Optional */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Catalogue Cover Image <span className="font-normal text-gray-400">(Optional)</span>
+                    Style Reference Image <span className="font-normal text-gray-400">(Optional)</span>
                   </label>
 
                   {editForm.reference_image_url ? (
                     <div className="relative h-32 w-full bg-gray-100 rounded-lg overflow-hidden border border-gray-200 group">
                       <img src={editForm.reference_image_url} alt="Reference" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 hidden">
-                        <Package className="w-8 h-8" />
+                        <Shirt className="w-8 h-8" />
                       </div>
                       <button
                         onClick={() => setEditForm({ ...editForm, reference_image_url: '' })}
@@ -464,23 +472,23 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             type="button"
-                            onClick={() => setEditForm({ ...editForm, reference_image_url: 'https://images.unsplash.com/photo-1563289069-42b4d45d3412?auto=format&fit=crop&q=80&w=300' })}
+                            onClick={() => setEditForm({ ...editForm, reference_image_url: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=300' })}
                             className="h-20 rounded-lg border-2 border-gray-200 hover:border-blue-500 transition overflow-hidden bg-gray-50"
                           >
                             <img
-                              src="https://images.unsplash.com/photo-1563289069-42b4d45d3412?auto=format&fit=crop&q=80&w=300"
-                              alt="Electrode"
+                              src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=300"
+                              alt="Cotton Shirt"
                               className="w-full h-full object-cover"
                             />
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditForm({ ...editForm, reference_image_url: 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=300' })}
+                            onClick={() => setEditForm({ ...editForm, reference_image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=300' })}
                             className="h-20 rounded-lg border-2 border-gray-200 hover:border-blue-500 transition overflow-hidden bg-gray-50"
                           >
                             <img
-                              src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&q=80&w=300"
-                              alt="Welding"
+                              src="https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=300"
+                              alt="Fabric Roll"
                               className="w-full h-full object-cover"
                             />
                           </button>
@@ -642,7 +650,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       onChange={e => setNewCheckpoint(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && addCheckpoint()}
                       className="flex-grow text-sm px-3 py-1.5 border border-blue-200 rounded focus:outline-none focus:border-blue-400"
-                      placeholder="Add new check (e.g. Check tip coating)"
+                      placeholder="Add new check (e.g. Check stitching)"
                     />
                     <button onClick={addCheckpoint} className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded font-medium hover:bg-blue-700">Add</button>
                   </div>
@@ -782,7 +790,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                   />
                 ) : null}
                 <div className={`w-full h-full flex items-center justify-center text-gray-300 ${item.reference_image_url ? 'hidden' : ''}`}>
-                  <Package className="w-12 h-12" />
+                  <Shirt className="w-12 h-12" />
                 </div>
                 <div className="absolute top-3 right-3 flex gap-2">
                   <button
@@ -798,141 +806,56 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                     {item.category}
                   </span>
                   {item.uom && (
-                    <span className="bg-blue-600/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm uppercase tracking-wide">
+                    <span className="bg-white/90 text-gray-700 text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm uppercase tracking-wide border border-gray-200">
                       {item.uom}
                     </span>
                   )}
-                  {(item.standard_images?.accepted?.length || 0) > 0 && (
-                    <span className="bg-green-600/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm uppercase tracking-wide flex items-center gap-1">
-                      <ImagePlus className="w-3 h-3" /> Standards
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {/* Content Area */}
-              <div className="p-5 flex-grow flex flex-col">
-                <div className="mb-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight mb-1">{item.name}</h3>
-                    {item.item_type === 'buy' ? (
-                      <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded border border-orange-200 uppercase font-bold tracking-wide whitespace-nowrap">Buy</span>
-                    ) : (
-                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200 uppercase font-bold tracking-wide whitespace-nowrap">Sell</span>
-                    )}
-                  </div>
-                  <p className="text-gray-500 font-mono text-xs">{item.code}</p>
-
-                  {/* Dimensions Display */}
-                  {item.dimensions && (
-                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                      <Ruler className="w-3 h-3 text-gray-400" />
-                      <span className="truncate">{item.dimensions}</span>
-                    </p>
-                  )}
+              {/* Content */}
+              <div className="p-4 flex flex-col flex-grow">
+                <div className="mb-4">
+                  <h3 className="font-bold text-gray-900 line-clamp-1">{item.name}</h3>
+                  <p className="text-xs text-gray-500 font-mono mt-1">{item.code}</p>
                 </div>
 
-                {item.item_type === 'buy' && item.preferred_supplier && (
-                  <div className="mb-3 flex items-start gap-1.5 text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                    <Factory className="w-3 h-3 mt-0.5 text-gray-400" />
-                    <span className="truncate" title={item.preferred_supplier}>{item.preferred_supplier}</span>
+                {/* Stats (if available) - Improved Layout */}
+                {stats && (
+                  <div className="mt-auto pt-3 border-t border-gray-100 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-400 block mb-0.5">Defect Rate</span>
+                      <span className={`font-bold ${stats.avgDefectRate > 5 ? 'text-red-500' : 'text-green-600'}`}>
+                        {stats.avgDefectRate.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block mb-0.5">Total Inspections</span>
+                      <span className="font-bold text-gray-700">{stats.total}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Stats / Performance Summary Section */}
-                {stats ? (
-                  <div className="mb-3 bg-gray-50 rounded-lg p-2.5 border border-gray-200">
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-500 uppercase mb-2">
-                      <Activity className="w-3 h-3" /> Inspection History
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-center border-b border-gray-200 pb-2 mb-2">
-                      <div>
-                        <div className="text-[10px] text-gray-400">Total</div>
-                        <div className="font-bold text-sm">{stats.total}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-gray-400">Pass Rate</div>
-                        <div className={`font-bold text-sm ${stats.passRate >= 90 ? 'text-green-600' : stats.passRate >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
-                          {stats.passRate.toFixed(0)}%
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-gray-400">Avg Defects</div>
-                        <div className={`font-bold text-sm ${stats.avgDefectRate < 2 ? 'text-green-600' : 'text-orange-600'}`}>
-                          {stats.avgDefectRate.toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-                    {stats.topDefects.length > 0 && (
-                      <div className="text-xs text-gray-500 flex items-start gap-1">
-                        <AlertCircle className="w-3 h-3 mt-0.5 text-orange-400 flex-shrink-0" />
-                        <span className="truncate">Top: {stats.topDefects.join(', ')}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mb-3 bg-gray-50/50 rounded-lg p-3 border border-dashed border-gray-200 text-center">
-                    <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
-                      <History className="w-3 h-3" /> No inspection history
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex-grow">
-                  {item.quality_checkpoints && item.quality_checkpoints.length > 0 ? (
-                    <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100/50">
-                      <p className="text-[10px] font-bold text-blue-600 uppercase mb-2 flex items-center gap-1">
-                        <ListChecks className="w-3 h-3" /> {item.quality_checkpoints.length} Checkpoints
-                      </p>
-                      <ul className="space-y-1">
-                        {item.quality_checkpoints.slice(0, 3).map((cp, idx) => (
-                          <li key={idx} className="text-xs text-gray-600 flex items-start gap-1.5">
-                            <span className="mt-0.5 w-1 h-1 rounded-full bg-blue-400 flex-shrink-0"></span>
-                            <span className="truncate">{cp}</span>
-                          </li>
-                        ))}
-                        {item.quality_checkpoints.length > 3 && (
-                          <li className="text-[10px] text-blue-500 pl-2.5 font-medium">+ {item.quality_checkpoints.length - 3} more</li>
-                        )}
-                      </ul>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-400 italic py-2">No specific checkpoints defined.</p>
-                  )}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end gap-2">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition"
+                    title="Edit Item"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-2 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-lg transition"
+                    title="Delete Item"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="text-gray-400 hover:text-red-500 p-2 rounded transition"
-                  title="Delete Item"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:border-blue-400 hover:text-blue-600 transition shadow-sm"
-                >
-                  <Edit2 className="w-3 h-3" /> Manage Details
-                </button>
               </div>
             </div>
           );
         })}
-
-        {/* Empty State Add Card */}
-        <div
-          onClick={handleCreateNew}
-          className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-blue-400 hover:bg-blue-50/30 hover:text-blue-500 cursor-pointer transition min-h-[350px]"
-        >
-          <div className="bg-gray-100 p-4 rounded-full mb-4 group-hover:bg-blue-100 transition">
-            <Plus className="w-8 h-8" />
-          </div>
-          <h3 className="font-bold text-lg">Add New Item</h3>
-          <p className="text-sm opacity-70">Define specs & checkpoints</p>
-        </div>
       </div>
     </div>
   );

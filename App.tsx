@@ -12,7 +12,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';
 import { dataService } from './services/dataService';
 import { MetaData, InspectionReport, ItemMaster } from './types';
-import { Shield, Hammer, Activity, LayoutDashboard, Package, Users, UserCheck, Camera, LogOut, Settings } from 'lucide-react';
+import { Shield, Scissors, Activity, LayoutDashboard, Shirt, Users, UserCheck, Camera, LogOut, Settings } from 'lucide-react';
 import { useInspection } from './hooks/useInspection';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
@@ -55,9 +55,9 @@ const App: React.FC = () => {
   // App Context State
   const [meta, setMeta] = useState<MetaData>({
     inspection_type: 'incoming',
-    supplier_name: 'Shanghai Industries (Pvt) Ltd.',
-    brand: 'Shanghai Industries',
-    product_code: '',
+    supplier_name: 'FabriCo Ltd',
+    brand: 'FabriCo',
+    style_number: '',
     po_number: '',
     inspector_name: '',
     spec_limits: '',
@@ -126,7 +126,7 @@ const App: React.FC = () => {
 
   const currentReportItem = useMemo(() => {
     if (!inspectionState.report) return undefined;
-    return items.find(i => i.code === inspectionState.report!.inspection_header.product_code);
+    return items.find(i => i.code === inspectionState.report!.inspection_header.style_number);
   }, [inspectionState.report, items]);
 
   // Handlers
@@ -163,7 +163,7 @@ const App: React.FC = () => {
   };
 
   const handleSelectHistoryReport = (report: InspectionReport) => {
-    const contextItem = items.find(i => i.code === report.inspection_header.product_code);
+    const contextItem = items.find(i => i.code === report.inspection_header.style_number);
     setSelectedItemContext(contextItem || null);
     setLoadedReport(report);
     goToReport();
@@ -195,12 +195,12 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3 cursor-pointer" onClick={step !== 'login' ? handleManualReset : undefined}>
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <Shield className="h-6 w-6 text-white" />
+              <div className="bg-indigo-600 p-2 rounded-lg">
+                <Scissors className="h-6 w-6 text-white" />
               </div>
               <div>
-                <span className="font-bold text-xl tracking-tight">WeldVision AI</span>
-                <span className="text-xs block text-slate-400 font-light">Quality Control Portal</span>
+                <span className="font-bold text-xl tracking-tight">TexVision AI</span>
+                <span className="text-xs block text-slate-400 font-light">Textile Inspection Portal</span>
               </div>
             </div>
 
@@ -215,7 +215,7 @@ const App: React.FC = () => {
                   <span className="hidden sm:inline">History</span>
                 </button>
                 <button onClick={goToItems} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'items' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
-                  <Package className="w-4 h-4" />
+                  <Shirt className="w-4 h-4" />
                   <span className="hidden lg:inline">Items</span>
                 </button>
                 <button onClick={goToSuppliers} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'suppliers' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
@@ -268,8 +268,8 @@ const App: React.FC = () => {
           <ErrorBoundary>
             <div className="animate-fadeIn">
               <div className="text-center mb-10">
-                <h1 className="text-3xl font-bold text-gray-900">Visual Quality Inspection</h1>
-                <p className="mt-2 text-lg text-gray-600">Automated electrode verification via AI.</p>
+                <h1 className="text-3xl font-bold text-gray-900">Textile Quality Inspection</h1>
+                <p className="mt-2 text-lg text-gray-600">Automated fabric & garment verification via AI.</p>
               </div>
               <InspectionForm
                 onSubmit={handleStartInspection}
@@ -280,8 +280,8 @@ const App: React.FC = () => {
                 onItemSelect={setSelectedItemContext}
               />
               <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <FeatureCard icon={<Shield className="w-8 h-8 text-blue-500" />} title="Defect Detection" desc="AI identifies surface issues instantly." />
-                <FeatureCard icon={<Hammer className="w-8 h-8 text-orange-500" />} title="OCR & Validation" desc="Batch validation via text recognition." />
+                <FeatureCard icon={<Shield className="w-8 h-8 text-blue-500" />} title="Defect Detection" desc="AI identifies stains, tears, and stitching issues." />
+                <FeatureCard icon={<Scissors className="w-8 h-8 text-orange-500" />} title="Label Validation" desc="Cross-check care labels and style numbers." />
                 <FeatureCard icon={<Activity className="w-8 h-8 text-green-500" />} title="Trend Analysis" desc="Track quality records over time." />
               </div>
             </div>

@@ -1,50 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { analyzeInspection } from './geminiService';
-import type { MetaData, InspectionReport } from '../types';
+import type { MetaData } from '../types';
+
+// Define the mock function outside to be accessible
+const mockGenerateContent = vi.fn();
 
 // Mock the Google GenAI SDK
-vi.mock('@google/genai', () => ({
-    GoogleGenAI: vi.fn().mockImplementation(() => ({
-        models: {
-            generateContent: vi.fn().mockResolvedValue({
-                text: JSON.stringify({
-                    inspection_header: {
-                        inspection_type: 'incoming',
-                        supplier_name: 'Test Supplier',
-                        brand: 'Test',
-                        product_code: 'TEST-001',
-                        po_number: 'PO-001',
-                        invoice_number: '',
-                        batch_lot_number: '',
-                        inspection_date_time: new Date().toISOString(),
-                        inspector_name: 'Tester',
-                        customer_reference: '',
-                        spec_limits: ''
-                    },
-                    images: [],
-                    lot_assessment: {
-                        lot_status: 'accept',
-                        total_cartons_inspected: 1,
-                        total_packets_inspected: 1,
-                        total_electrodes_sampled: 1,
-                        defect_summary: [],
-                        critical_defects_present: false,
-                        critical_defect_details: [],
-                        conformity_summary: {
-                            product_match_spec: true,
-                            branding_match_spec: true,
-                            batch_and_dates_present: true
-                        },
-                        trend_comment: 'Test'
-                    }
-                }) + '\n\nTest summary'
-            })
-        }
-    }))
-}));
+vi.mock('@google/genai', () => {
+    return {
+        GoogleGenAI: vi.fn().mockImplementation(() => {
+            return {
+                models: {
+                    generateContent: mockGenerateContent
+                }
+            };
+        })
+    };
+});
 
 vi.mock('../utils/env', () => ({
-    getEnv: vi.fn((key: string) => key === 'API_KEY' ? 'test-key' : '')
+    getApiKey: vi.fn(() => 'test-key')
 }));
 
 describe('geminiService', () => {
@@ -52,19 +27,54 @@ describe('geminiService', () => {
         inspection_type: 'incoming',
         supplier_name: 'Test Supplier',
         brand: 'Test',
-        product_code: 'TEST-001',
+        style_number: 'TEST-001',
         po_number: 'PO-001',
         inspector_name: 'Tester',
         spec_limits: ''
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { getApiKey } = await import('../utils/env');
+        vi.mocked(getApiKey).mockReturnValue('test-key');
+
+        // Setup default success response
+        mockGenerateContent.mockResolvedValue({
+            text: JSON.stringify({
+                inspection_header: {
+                    inspection_type: 'incoming',
+                    supplier_name: 'Test Supplier',
+                    brand: 'Test',
+                    style_number: 'TEST-001',
+                    po_number: 'PO-001',
+                    invoice_number: '',
+                    batch_lot_number: '',
+                    inspection_date_time: new Date().toISOString(),
+                    inspector_name: 'Tester',
+                    customer_reference: '',
+                    spec_limits: ''
+                },
+                images: [],
+                lot_assessment: {
+                    lot_status: 'accept',
+                    total_items_inspected: 10,
+                    defect_summary: [],
+                    critical_defects_present: false,
+                    critical_defect_details: [],
+                    conformity_summary: {
+                        product_match_spec: true,
+                        branding_match_spec: true,
+                        labeling_present: true
+                    },
+                    trend_comment: 'Test'
+                }
+            }) + '\n\nTest summary'
+        });
     });
 
     it('should throw error if API key is missing', async () => {
-        const { getEnv } = await import('../utils/env');
-        vi.mocked(getEnv).mockReturnValue('');
+        const { getApiKey } = await import('../utils/env');
+        vi.mocked(getApiKey).mockReturnValue('');
 
         await expect(
             analyzeInspection(['data:image/png;base64,test'], mockMeta)
@@ -81,6 +91,7 @@ describe('geminiService', () => {
         expect(result).toHaveProperty('summary');
         expect(result.report).toHaveProperty('inspection_header');
         expect(result.report.inspection_header.supplier_name).toBe('Test Supplier');
+        expect(mockGenerateContent).toHaveBeenCalled();
     });
 
     it('should handle multiple images', async () => {
@@ -91,5 +102,6 @@ describe('geminiService', () => {
 
         const result = await analyzeInspection(images, mockMeta);
         expect(result).toHaveProperty('report');
+        expect(mockGenerateContent).toHaveBeenCalled();
     });
 });
