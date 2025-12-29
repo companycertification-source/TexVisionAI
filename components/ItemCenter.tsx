@@ -297,7 +297,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                         type="radio"
                         name="item_type"
                         checked={editForm.item_type === 'sell'}
-                        onChange={() => setEditForm({ ...editForm, item_type: 'sell' })}
+                        onChange={() => setEditForm({ ...editForm, item_type: 'sell', category: '' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium flex items-center gap-1"><Tag className="w-3 h-3 text-green-600" /> Finished Garment</span>
@@ -307,7 +307,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                         type="radio"
                         name="item_type"
                         checked={editForm.item_type === 'buy'}
-                        onChange={() => setEditForm({ ...editForm, item_type: 'buy' })}
+                        onChange={() => setEditForm({ ...editForm, item_type: 'buy', category: '' })}
                         className="text-blue-600 focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium flex items-center gap-1"><ShoppingBag className="w-3 h-3 text-orange-600" /> Fabric / Trim</span>
@@ -374,14 +374,37 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">-- Select Category --</option>
-                    <option value="Tops">Tops</option>
-                    <option value="Bottoms">Bottoms</option>
-                    <option value="Outerwear">Outerwear</option>
-                    <option value="Dresses">Dresses</option>
-                    <option value="Fabric - Knits">Fabric - Knits</option>
-                    <option value="Fabric - Wovens">Fabric - Wovens</option>
-                    <option value="Trims">Trims</option>
-                    <option value="Accessories">Accessories</option>
+
+                    {/* Finished Garment Categories */}
+                    {editForm.item_type === 'sell' && (
+                      <>
+                        <option value="Tops">Tops</option>
+                        <option value="Bottoms">Bottoms</option>
+                        <option value="Outerwear">Outerwear</option>
+                        <option value="Dresses">Dresses</option>
+                        <option value="Activewear">Activewear</option>
+                        <option value="Sleepwear">Sleepwear</option>
+                        <option value="Underwear">Underwear</option>
+                        <option value="Accessories">Accessories</option>
+                      </>
+                    )}
+
+                    {/* Fabric / Trim Categories */}
+                    {editForm.item_type === 'buy' && (
+                      <>
+                        <option value="Woven Fabric">Woven Fabric</option>
+                        <option value="Knit Fabric">Knit Fabric</option>
+                        <option value="Denim">Denim</option>
+                        <option value="Lining">Lining</option>
+                        <option value="Interlining">Interlining</option>
+                        <option value="Buttons">Buttons</option>
+                        <option value="Zippers">Zippers</option>
+                        <option value="Labels">Labels</option>
+                        <option value="Thread">Thread</option>
+                        <option value="Elastic">Elastic</option>
+                        <option value="Other Trims">Other Trims</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
