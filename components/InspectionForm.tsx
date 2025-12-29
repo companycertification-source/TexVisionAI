@@ -251,9 +251,17 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
 
   const validateStep = (step: number): boolean => {
     const isRandomInspection = meta.inspection_type === 'in_process';
+    const selectedItem = items.find(i => i.id === selectedItemId);
     switch (step) {
       case 1: if (meta.inspection_type === 'incoming' && !meta.supplier_name) return false; return true;
-      case 2: if (!meta.po_number || !meta.style_number) return false; return true;
+      case 2:
+        // Random Inspection: requires item OR category
+        if (isRandomInspection) {
+          return !!selectedItem || !!meta.category;
+        }
+        // Other inspections: require PO and style number
+        if (!meta.po_number || !meta.style_number) return false;
+        return true;
       case 3: if (isRandomInspection) return true; if (!meta.lot_size) return false; return true; // Skip validation for random inspection
       case 4: return files.length >= MIN_IMAGES;
       default: return true;
@@ -281,6 +289,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
   };
 
   const isFinishedGoods = meta.inspection_type === 'finished_goods';
+  const isRandomInspection = meta.inspection_type === 'in_process';
   const selectedItem = items.find(i => i.id === selectedItemId);
 
   // QR Data Generation for URL
@@ -368,7 +377,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
               </div>
             </div>
 
-            {!isFinishedGoods && (
+            {!isFinishedGoods && !isRandomInspection && (
               <div className="animate-fadeIn">
                 <label className="block text-sm font-bold text-black mb-1">Supplier / Factory <span className="text-red-500">*</span></label>
                 <div className="flex gap-2">
@@ -485,55 +494,104 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-black mb-1">Style Number / Ref <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  name="style_number"
-                  value={meta.style_number}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="e.g. SHIRT-2401"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-black mb-1">Brand</label>
-                <input
-                  type="text"
-                  name="brand"
-                  value={meta.brand}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                  placeholder="Brand Name"
-                />
-              </div>
-            </div>
+            {/* Hide these fields for Random Inspection */}
+            {!isRandomInspection && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-black mb-1">Style Number / Ref <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="style_number"
+                      value={meta.style_number}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="e.g. SHIRT-2401"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-black mb-1">Brand</label>
+                    <input
+                      type="text"
+                      name="brand"
+                      value={meta.brand}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                      placeholder="Brand Name"
+                    />
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-black mb-1">{isFinishedGoods ? 'Production Order #' : 'PO Number'} <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  name="po_number"
-                  value={meta.po_number}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-black mb-1">{isFinishedGoods ? 'Production Order #' : 'PO Number'} <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      name="po_number"
+                      value={meta.po_number}
+                      onChange={handleChange}
+                      placeholder={isFinishedGoods ? "e.g. CUT-3444" : "e.g. PO-8892"}
+                      className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-black mb-1">Batch / Roll No.</label>
+                    <input
+                      type="text"
+                      name="batch_lot_number"
+                      value={meta.batch_lot_number || ''}
+                      onChange={handleChange}
+                      placeholder="Scan or enter roll/batch"
+                      className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Category field for Random Inspection - required if no item selected */}
+            {isRandomInspection && (
+              <div className="animate-fadeIn">
+                <label className="block text-sm font-bold text-black mb-1">
+                  Category {!selectedItem && <span className="text-red-500">*</span>}
+                </label>
+                <select
+                  name="category"
+                  value={selectedItem?.category || meta.category || ''}
                   onChange={handleChange}
-                  placeholder={isFinishedGoods ? "e.g. CUT-3444" : "e.g. PO-8892"}
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                />
+                  disabled={!!selectedItem}
+                  className={`w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm ${selectedItem ? 'bg-gray-100 text-gray-600' : 'bg-white'}`}
+                >
+                  <option value="">-- Select Category --</option>
+                  <optgroup label="Garments">
+                    <option value="Tops">Tops</option>
+                    <option value="Bottoms">Bottoms</option>
+                    <option value="Outerwear">Outerwear</option>
+                    <option value="Dresses">Dresses</option>
+                    <option value="Activewear">Activewear</option>
+                    <option value="Sleepwear">Sleepwear</option>
+                    <option value="Underwear">Underwear</option>
+                    <option value="Accessories">Accessories</option>
+                  </optgroup>
+                  <optgroup label="Fabric / Trims">
+                    <option value="Woven Fabric">Woven Fabric</option>
+                    <option value="Knit Fabric">Knit Fabric</option>
+                    <option value="Denim">Denim</option>
+                    <option value="Lining">Lining</option>
+                    <option value="Interlining">Interlining</option>
+                    <option value="Buttons">Buttons</option>
+                    <option value="Zippers">Zippers</option>
+                    <option value="Labels">Labels</option>
+                    <option value="Thread">Thread</option>
+                    <option value="Elastic">Elastic</option>
+                    <option value="Other Trims">Other Trims</option>
+                  </optgroup>
+                </select>
+                {selectedItem && (
+                  <p className="text-xs text-gray-500 mt-1">Category auto-filled from selected item</p>
+                )}
               </div>
-              <div>
-                <label className="block text-sm font-bold text-black mb-1">Batch / Roll No.</label>
-                <input
-                  type="text"
-                  name="batch_lot_number"
-                  value={meta.batch_lot_number || ''}
-                  onChange={handleChange}
-                  placeholder="Scan or enter roll/batch"
-                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
-            </div>
+            )}
           </div>
         )}
 

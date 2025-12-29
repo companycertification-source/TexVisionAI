@@ -189,6 +189,7 @@ export interface MetaData {
     minor_re: number;
   };
   inspection_mode?: 'quick' | 'detailed';
+  category?: string; // For Random Inspection when no item is selected
 }
 
 export interface AppState {
