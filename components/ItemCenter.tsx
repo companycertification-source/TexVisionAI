@@ -15,6 +15,166 @@ interface ItemCenterProps {
   onDeleteItem?: (itemId: string) => void;
 }
 
+// Default Quality Checkpoints by Category
+const DEFAULT_QUALITY_CHECKPOINTS: Record<string, string[]> = {
+  // Garment Categories
+  'Tops': [
+    'Check collar shape and symmetry',
+    'Verify button alignment and stitching',
+    'Inspect seam quality (shoulder, side, armhole)',
+    'Check sleeve length and hem finish',
+    'Verify label placement and print quality',
+    'Check for fabric defects (holes, stains, pilling)',
+  ],
+  'Bottoms': [
+    'Check waistband alignment and elastic quality',
+    'Verify zipper/button functionality',
+    'Inspect inseam and outseam stitching',
+    'Check pocket placement and construction',
+    'Verify hem finish and length consistency',
+    'Check for fabric defects and color shading',
+  ],
+  'Outerwear': [
+    'Check zipper/button closure functionality',
+    'Inspect lining attachment and quality',
+    'Verify pocket construction and placement',
+    'Check collar/hood shape and attachment',
+    'Inspect seam sealing (if waterproof)',
+    'Verify overall construction and symmetry',
+  ],
+  'Dresses': [
+    'Check neckline shape and finish',
+    'Verify zipper/closure functionality',
+    'Inspect waist seam and gathering',
+    'Check hem finish and length',
+    'Verify lining attachment (if lined)',
+    'Check overall drape and symmetry',
+  ],
+  'Activewear': [
+    'Check stretch and recovery of fabric',
+    'Verify flatlock seam quality',
+    'Inspect waistband elastic quality',
+    'Check moisture-wicking properties',
+    'Verify reflective elements (if applicable)',
+    'Check for pilling resistance',
+  ],
+  'Sleepwear': [
+    'Check fabric softness and hand feel',
+    'Verify seam comfort (no rough edges)',
+    'Inspect elastic quality and stretch',
+    'Check print/embroidery quality',
+    'Verify care label accuracy',
+    'Check overall comfort features',
+  ],
+  'Underwear': [
+    'Check elastic waistband quality',
+    'Verify gusset construction',
+    'Inspect seam comfort and flatness',
+    'Check fabric stretch and recovery',
+    'Verify size label accuracy',
+    'Check for fabric defects',
+  ],
+  'Accessories': [
+    'Check overall construction quality',
+    'Verify hardware functionality',
+    'Inspect stitching and finishing',
+    'Check branding/logo placement',
+    'Verify material quality',
+    'Check packaging condition',
+  ],
+
+  // Fabric/Trim Categories
+  'Woven Fabric': [
+    'Check GSM/weight against specification',
+    'Verify width measurement',
+    'Inspect for weaving defects (broken threads, holes)',
+    'Check color consistency (shade matching)',
+    'Verify shrinkage within tolerance',
+    'Inspect selvedge quality',
+  ],
+  'Knit Fabric': [
+    'Check GSM/weight against specification',
+    'Verify width and stretch recovery',
+    'Inspect for knitting defects (dropped stitches, holes)',
+    'Check color consistency and shade lot',
+    'Verify shrinkage and spirality',
+    'Check pilling resistance',
+  ],
+  'Denim': [
+    'Check weight (oz) against specification',
+    'Verify width and stretch (if stretch denim)',
+    'Inspect for weaving defects',
+    'Check indigo shade consistency',
+    'Verify shrinkage within tolerance',
+    'Check selvedge quality',
+  ],
+  'Lining': [
+    'Check weight and hand feel',
+    'Verify width measurement',
+    'Inspect for defects and holes',
+    'Check color consistency',
+    'Verify static properties',
+    'Check slippage resistance',
+  ],
+  'Interlining': [
+    'Check weight/GSM specification',
+    'Verify bonding strength',
+    'Inspect for coating consistency',
+    'Check shrinkage compatibility',
+    'Verify hand feel after fusing',
+    'Check for strike-through',
+  ],
+  'Buttons': [
+    'Check size and thickness',
+    'Verify color match to standard',
+    'Inspect for cracks or chips',
+    'Check hole alignment and size',
+    'Verify attachment strength test',
+    'Check logo/engraving quality',
+  ],
+  'Zippers': [
+    'Check length and teeth count',
+    'Verify slider functionality',
+    'Inspect teeth alignment',
+    'Check tape color match',
+    'Verify pull tab attachment',
+    'Check opening/closing smoothness',
+  ],
+  'Labels': [
+    'Check print/woven quality',
+    'Verify text accuracy and legibility',
+    'Inspect size and dimensions',
+    'Check color fastness',
+    'Verify fold and cut quality',
+    'Check barcode/QR readability',
+  ],
+  'Thread': [
+    'Check color match to standard',
+    'Verify thread count and strength',
+    'Inspect for knots and defects',
+    'Check colorfast properties',
+    'Verify spool/cone winding',
+    'Check length specification',
+  ],
+  'Elastic': [
+    'Check width measurement',
+    'Verify stretch and recovery',
+    'Inspect for defects and marks',
+    'Check color consistency',
+    'Verify strength and durability',
+    'Check hand feel and comfort',
+  ],
+  'Other Trims': [
+    'Check specification compliance',
+    'Verify color/shade matching',
+    'Inspect for defects',
+    'Check dimensions accuracy',
+    'Verify functionality (if applicable)',
+    'Check packaging condition',
+  ],
+};
+
+
 export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, suppliers, onBack, onSaveItem, onDeleteItem }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -370,7 +530,16 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                   <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
                   <select
                     value={editForm.category}
-                    onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                    onChange={e => {
+                      const newCategory = e.target.value;
+                      const defaultCheckpoints = DEFAULT_QUALITY_CHECKPOINTS[newCategory] || [];
+                      setEditForm({
+                        ...editForm,
+                        category: newCategory,
+                        // Always apply default checkpoints when category changes
+                        quality_checkpoints: [...defaultCheckpoints]
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="">-- Select Category --</option>
@@ -804,6 +973,18 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       placeholder="Add new check (e.g. Check stitching)"
                     />
                     <button onClick={addCheckpoint} className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded font-medium hover:bg-blue-700">Add</button>
+                    {editForm.category && DEFAULT_QUALITY_CHECKPOINTS[editForm.category] && (
+                      <button
+                        onClick={() => setEditForm({
+                          ...editForm,
+                          quality_checkpoints: [...(DEFAULT_QUALITY_CHECKPOINTS[editForm.category] || [])]
+                        })}
+                        className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded font-medium hover:bg-gray-200 border border-gray-300"
+                        title="Reset to default checkpoints for this category"
+                      >
+                        Reset
+                      </button>
+                    )}
                   </div>
                 </div>
 
