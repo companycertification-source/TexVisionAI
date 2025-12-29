@@ -375,8 +375,8 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
           setEditForm(prev => {
             if (!prev) return null;
             const current = prev.standard_images?.rejected || [];
-            if (current.length >= 2) {
-              alert("Maximum 2 rejected reference images allowed.");
+            if (current.length >= 8) {
+              alert("Maximum 8 rejected reference images allowed.");
               return prev;
             }
             return {
@@ -872,16 +872,16 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       {/* Rejected Images - Standard */}
                       <div>
                         <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
-                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 2)
+                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 8)
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-4 gap-2">
                           {(editForm.standard_images?.rejected || []).map((img, idx) => (
                             <div key={idx} className="relative aspect-square bg-white border border-red-200 rounded overflow-hidden group">
                               <img src={img} alt="Rejected Standard" className="w-full h-full object-cover" />
                               <button onClick={() => removeStandardImage('rejected', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
                             </div>
                           ))}
-                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 2) && (
+                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 8) && (
                             <label className="aspect-square flex flex-col items-center justify-center border border-red-200 border-dashed rounded bg-red-50/50 hover:bg-red-100 cursor-pointer transition">
                               <Plus className="w-4 h-4 text-red-600" />
                               <span className="text-[10px] text-red-600">Add Defect</span>
@@ -923,16 +923,16 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                       {/* Rejected Images */}
                       <div>
                         <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
-                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 2)
+                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 8)
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-4 gap-2">
                           {(editForm.standard_images?.rejected || []).map((img, idx) => (
                             <div key={idx} className="relative aspect-square bg-white border border-red-200 rounded overflow-hidden group">
                               <img src={img} alt="Rejected Standard" className="w-full h-full object-cover" />
                               <button onClick={() => removeStandardImage('rejected', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
                             </div>
                           ))}
-                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 2) && (
+                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 8) && (
                             <label className="aspect-square flex flex-col items-center justify-center border border-red-200 border-dashed rounded bg-red-50/50 hover:bg-red-100 cursor-pointer transition">
                               <Plus className="w-4 h-4 text-red-600" />
                               <span className="text-[10px] text-red-600">Add Defect</span>
