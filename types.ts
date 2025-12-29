@@ -147,9 +147,15 @@ export interface ItemMaster {
   specifications: string;
   quality_checkpoints?: string[];
   reference_image_url?: string;
+  // Front/Back reference images for garments
+  reference_image_front_url?: string;
+  reference_image_back_url?: string;
   standard_images?: {
     accepted: string[];
     rejected: string[];
+    // For garments: separate front/back accepted images
+    accepted_front?: string;
+    accepted_back?: string;
   };
   aql_config?: {
     level: 'I' | 'II' | 'III';

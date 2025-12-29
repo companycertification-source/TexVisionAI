@@ -155,7 +155,7 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'main' | 'accepted' | 'rejected') => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'main' | 'accepted' | 'rejected' | 'accepted_front' | 'accepted_back' | 'reference_front' | 'reference_back') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -164,6 +164,36 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
 
         if (target === 'main') {
           setEditForm(prev => prev ? ({ ...prev, reference_image_url: result }) : null);
+        } else if (target === 'reference_front') {
+          setEditForm(prev => prev ? ({ ...prev, reference_image_front_url: result }) : null);
+        } else if (target === 'reference_back') {
+          setEditForm(prev => prev ? ({ ...prev, reference_image_back_url: result }) : null);
+        } else if (target === 'accepted_front') {
+          setEditForm(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              standard_images: {
+                ...prev.standard_images,
+                accepted: prev.standard_images?.accepted || [],
+                rejected: prev.standard_images?.rejected || [],
+                accepted_front: result
+              }
+            };
+          });
+        } else if (target === 'accepted_back') {
+          setEditForm(prev => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              standard_images: {
+                ...prev.standard_images,
+                accepted: prev.standard_images?.accepted || [],
+                rejected: prev.standard_images?.rejected || [],
+                accepted_back: result
+              }
+            };
+          });
         } else if (target === 'accepted') {
           setEditForm(prev => {
             if (!prev) return null;
@@ -571,58 +601,154 @@ export const ItemCenter: React.FC<ItemCenterProps> = ({ items, history, supplier
                   <p className="text-[10px] text-purple-600 mt-2 italic">Defines sample sizes and acceptance limits for inspections of this item.</p>
                 </div>
 
-                {/* Visual Standards - 2x2 Grid */}
+                {/* Visual Standards - Conditional based on category */}
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <label className="block text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                     <ImagePlus className="w-4 h-4 text-blue-600" />
                     Visual Standards (Analysis Context)
                   </label>
 
-                  <div className="space-y-4">
-                    {/* Accepted Images */}
-                    <div>
-                      <p className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1">
-                        <ThumbsUp className="w-3 h-3" /> ACCEPTABLE (Max 2)
+                  {/* Garment Items: Front/Back images */}
+                  {['Tops', 'Bottoms', 'Outerwear', 'Dresses', 'Accessories'].includes(editForm.category) ? (
+                    <div className="space-y-4">
+                      <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100">
+                        <strong>Garment Item:</strong> Upload both front and back acceptable reference images for complete quality comparison.
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(editForm.standard_images?.accepted || []).map((img, idx) => (
-                          <div key={idx} className="relative aspect-square bg-white border border-green-200 rounded overflow-hidden group">
-                            <img src={img} alt="Acceptable Standard" className="w-full h-full object-cover" />
-                            <button onClick={() => removeStandardImage('accepted', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
-                          </div>
-                        ))}
-                        {(!editForm.standard_images?.accepted || editForm.standard_images.accepted.length < 2) && (
-                          <label className="aspect-square flex flex-col items-center justify-center border border-green-200 border-dashed rounded bg-green-50/50 hover:bg-green-100 cursor-pointer transition">
-                            <Plus className="w-4 h-4 text-green-600" />
-                            <span className="text-[10px] text-green-600">Add Good</span>
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'accepted')} />
-                          </label>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Rejected Images */}
-                    <div>
-                      <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
-                        <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 2)
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(editForm.standard_images?.rejected || []).map((img, idx) => (
-                          <div key={idx} className="relative aspect-square bg-white border border-red-200 rounded overflow-hidden group">
-                            <img src={img} alt="Rejected Standard" className="w-full h-full object-cover" />
-                            <button onClick={() => removeStandardImage('rejected', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                      {/* Acceptable Front/Back */}
+                      <div>
+                        <p className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1">
+                          <ThumbsUp className="w-3 h-3" /> ACCEPTABLE - Front & Back
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* Front Image */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">Front View</span>
+                            {editForm.standard_images?.accepted_front ? (
+                              <div className="relative aspect-square bg-white border-2 border-green-300 rounded-lg overflow-hidden group shadow-sm">
+                                <img src={editForm.standard_images.accepted_front} alt="Front Acceptable" className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => setEditForm(prev => prev ? ({
+                                    ...prev,
+                                    standard_images: { ...prev.standard_images, accepted: prev.standard_images?.accepted || [], rejected: prev.standard_images?.rejected || [], accepted_front: undefined }
+                                  }) : null)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                                <div className="absolute bottom-0 left-0 right-0 bg-green-600/80 text-white text-[10px] py-1 text-center font-bold">FRONT</div>
+                              </div>
+                            ) : (
+                              <label className="aspect-square flex flex-col items-center justify-center border-2 border-green-300 border-dashed rounded-lg bg-green-50/50 hover:bg-green-100 cursor-pointer transition">
+                                <Plus className="w-5 h-5 text-green-600" />
+                                <span className="text-[10px] text-green-600 font-medium mt-1">Add Front</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'accepted_front')} />
+                              </label>
+                            )}
                           </div>
-                        ))}
-                        {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 2) && (
-                          <label className="aspect-square flex flex-col items-center justify-center border border-red-200 border-dashed rounded bg-red-50/50 hover:bg-red-100 cursor-pointer transition">
-                            <Plus className="w-4 h-4 text-red-600" />
-                            <span className="text-[10px] text-red-600">Add Defect</span>
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'rejected')} />
-                          </label>
-                        )}
+
+                          {/* Back Image */}
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase">Back View</span>
+                            {editForm.standard_images?.accepted_back ? (
+                              <div className="relative aspect-square bg-white border-2 border-green-300 rounded-lg overflow-hidden group shadow-sm">
+                                <img src={editForm.standard_images.accepted_back} alt="Back Acceptable" className="w-full h-full object-cover" />
+                                <button
+                                  onClick={() => setEditForm(prev => prev ? ({
+                                    ...prev,
+                                    standard_images: { ...prev.standard_images, accepted: prev.standard_images?.accepted || [], rejected: prev.standard_images?.rejected || [], accepted_back: undefined }
+                                  }) : null)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                                <div className="absolute bottom-0 left-0 right-0 bg-green-600/80 text-white text-[10px] py-1 text-center font-bold">BACK</div>
+                              </div>
+                            ) : (
+                              <label className="aspect-square flex flex-col items-center justify-center border-2 border-green-300 border-dashed rounded-lg bg-green-50/50 hover:bg-green-100 cursor-pointer transition">
+                                <Plus className="w-5 h-5 text-green-600" />
+                                <span className="text-[10px] text-green-600 font-medium mt-1">Add Back</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'accepted_back')} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rejected Images - Standard */}
+                      <div>
+                        <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
+                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 2)
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(editForm.standard_images?.rejected || []).map((img, idx) => (
+                            <div key={idx} className="relative aspect-square bg-white border border-red-200 rounded overflow-hidden group">
+                              <img src={img} alt="Rejected Standard" className="w-full h-full object-cover" />
+                              <button onClick={() => removeStandardImage('rejected', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                            </div>
+                          ))}
+                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 2) && (
+                            <label className="aspect-square flex flex-col items-center justify-center border border-red-200 border-dashed rounded bg-red-50/50 hover:bg-red-100 cursor-pointer transition">
+                              <Plus className="w-4 h-4 text-red-600" />
+                              <span className="text-[10px] text-red-600">Add Defect</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'rejected')} />
+                            </label>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* Fabric/Trim Items: Standard single images */
+                    <div className="space-y-4">
+                      <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-100">
+                        <strong>Fabric/Trim Item:</strong> Upload up to 2 acceptable reference images (front view only).
+                      </p>
+
+                      {/* Accepted Images */}
+                      <div>
+                        <p className="text-xs font-bold text-green-700 mb-2 flex items-center gap-1">
+                          <ThumbsUp className="w-3 h-3" /> ACCEPTABLE (Max 2)
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(editForm.standard_images?.accepted || []).map((img, idx) => (
+                            <div key={idx} className="relative aspect-square bg-white border border-green-200 rounded overflow-hidden group">
+                              <img src={img} alt="Acceptable Standard" className="w-full h-full object-cover" />
+                              <button onClick={() => removeStandardImage('accepted', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                            </div>
+                          ))}
+                          {(!editForm.standard_images?.accepted || editForm.standard_images.accepted.length < 2) && (
+                            <label className="aspect-square flex flex-col items-center justify-center border border-green-200 border-dashed rounded bg-green-50/50 hover:bg-green-100 cursor-pointer transition">
+                              <Plus className="w-4 h-4 text-green-600" />
+                              <span className="text-[10px] text-green-600">Add Good</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'accepted')} />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rejected Images */}
+                      <div>
+                        <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1">
+                          <ThumbsDown className="w-3 h-3" /> UNACCEPTABLE (Max 2)
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(editForm.standard_images?.rejected || []).map((img, idx) => (
+                            <div key={idx} className="relative aspect-square bg-white border border-red-200 rounded overflow-hidden group">
+                              <img src={img} alt="Rejected Standard" className="w-full h-full object-cover" />
+                              <button onClick={() => removeStandardImage('rejected', idx)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                            </div>
+                          ))}
+                          {(!editForm.standard_images?.rejected || editForm.standard_images.rejected.length < 2) && (
+                            <label className="aspect-square flex flex-col items-center justify-center border border-red-200 border-dashed rounded bg-red-50/50 hover:bg-red-100 cursor-pointer transition">
+                              <Plus className="w-4 h-4 text-red-600" />
+                              <span className="text-[10px] text-red-600">Add Defect</span>
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'rejected')} />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
