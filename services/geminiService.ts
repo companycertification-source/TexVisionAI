@@ -3,6 +3,7 @@ import JSON5 from 'json5';
 import { SYSTEM_PROMPT } from "../constants";
 import { MetaData, InspectionReport, ItemMaster } from "../types";
 import { getApiKey } from "../utils/env";
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
 
 export interface AnalysisResult {
   report: InspectionReport;
@@ -324,6 +325,26 @@ export const analyzeInspection = async (
     const { report, summary } = parseGenerativeOutput(text);
 
     if (!report) throw new Error("Failed to generate report.");
+
+    // --- Log API Usage (Fire and Forget) ---
+    if (isSupabaseConfigured() && supabase) {
+      // Estimate token count (rough approximation: 1 char ~= 0.25 tokens, + image overhead)
+      // Input: prompt text len / 4 + images * 258
+      // Output: response text len / 4
+      const inputTokens = Math.ceil(promptText.length / 4) + (inputs.length * 258);
+      const outputTokens = Math.ceil(text.length / 4);
+      const totalTokens = inputTokens + outputTokens;
+
+      supabase.from('usage_logs').insert([{
+        model: modelId,
+        operation: 'analyze_image',
+        token_count: totalTokens,
+        status: 'success'
+      }]).then(({ error }) => {
+        if (error) console.error("Failed to log API usage:", error);
+      });
+    }
+    // ---------------------------------------
 
     return { report, summary };
 

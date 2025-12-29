@@ -385,47 +385,91 @@ export const dataService = {
   // --- Item Master Methods ---
 
   async getItems(): Promise<ItemMaster[]> {
-    try {
-      const stored = localStorage.getItem(ITEMS_KEY);
-      if (stored) {
-        return JSON.parse(stored);
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('items')
+          .select('*')
+          .order('name');
+
+        if (error) throw error;
+        return data as ItemMaster[];
+      } catch (err) {
+        console.error("Supabase items fetch error:", err);
+        return DEFAULT_ITEMS;
       }
-      return DEFAULT_ITEMS;
-    } catch (e) {
-      return DEFAULT_ITEMS;
+    } else {
+      try {
+        const stored = localStorage.getItem(ITEMS_KEY);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+        return DEFAULT_ITEMS;
+      } catch (e) {
+        return DEFAULT_ITEMS;
+      }
     }
   },
 
   async saveItem(item: ItemMaster): Promise<boolean> {
-    try {
-      const current = await this.getItems();
-      // Check if update or new
-      const index = current.findIndex(i => i.id === item.id);
-      let updatedItems = [];
-      if (index >= 0) {
-        updatedItems = [...current];
-        updatedItems[index] = item;
-      } else {
-        updatedItems = [...current, item];
-      }
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from('items')
+          .upsert(item);
 
-      localStorage.setItem(ITEMS_KEY, JSON.stringify(updatedItems));
-      return true;
-    } catch (e) {
-      console.error("Failed to save item", e);
-      return false;
+        if (error) throw error;
+        return true;
+      } catch (err) {
+        console.error("Supabase item save error:", err);
+        return false;
+      }
+    } else {
+      try {
+        const current = await this.getItems();
+        // Check if update or new
+        const index = current.findIndex(i => i.id === item.id);
+        let updatedItems = [];
+        if (index >= 0) {
+          updatedItems = [...current];
+          updatedItems[index] = item;
+        } else {
+          updatedItems = [...current, item];
+        }
+
+        localStorage.setItem(ITEMS_KEY, JSON.stringify(updatedItems));
+        return true;
+      } catch (e) {
+        console.error("Failed to save item", e);
+        return false;
+      }
     }
   },
 
   async deleteItem(itemId: string): Promise<boolean> {
-    try {
-      const current = await this.getItems();
-      const updatedItems = current.filter(i => i.id !== itemId);
-      localStorage.setItem(ITEMS_KEY, JSON.stringify(updatedItems));
-      return true;
-    } catch (e) {
-      console.error("Failed to delete item", e);
-      return false;
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { error } = await supabase
+          .from('items')
+          .delete()
+          .eq('id', itemId);
+
+        if (error) throw error;
+        return true;
+      } catch (err) {
+        console.error("Supabase item delete error:", err);
+        return false;
+      }
+    } else {
+      try {
+        const current = await this.getItems();
+        const updatedItems = current.filter(i => i.id !== itemId);
+        localStorage.setItem(ITEMS_KEY, JSON.stringify(updatedItems));
+        return true;
+      } catch (e) {
+        console.error("Failed to delete item", e);
+        return false;
+      }
     }
   },
 
