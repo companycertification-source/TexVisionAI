@@ -250,17 +250,35 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
   const handlePrintTags = () => window.print();
 
   const validateStep = (step: number): boolean => {
+    const isRandomInspection = meta.inspection_type === 'in_process';
     switch (step) {
       case 1: if (meta.inspection_type === 'incoming' && !meta.supplier_name) return false; return true;
       case 2: if (!meta.po_number || !meta.style_number) return false; return true;
-      case 3: if (!meta.lot_size) return false; return true;
+      case 3: if (isRandomInspection) return true; if (!meta.lot_size) return false; return true; // Skip validation for random inspection
       case 4: return files.length >= MIN_IMAGES;
       default: return true;
     }
   };
 
-  const nextStep = () => validateStep(currentStep) && setCurrentStep(prev => Math.min(prev + 1, 4));
-  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
+  const nextStep = () => {
+    if (!validateStep(currentStep)) return;
+    const isRandomInspection = meta.inspection_type === 'in_process';
+    // Skip step 3 (Sampling) for Random Inspection
+    if (currentStep === 2 && isRandomInspection) {
+      setCurrentStep(4);
+    } else {
+      setCurrentStep(prev => Math.min(prev + 1, 4));
+    }
+  };
+  const prevStep = () => {
+    const isRandomInspection = meta.inspection_type === 'in_process';
+    // Skip step 3 (Sampling) for Random Inspection
+    if (currentStep === 4 && isRandomInspection) {
+      setCurrentStep(2);
+    } else {
+      setCurrentStep(prev => Math.max(prev - 1, 1));
+    }
+  };
 
   const isFinishedGoods = meta.inspection_type === 'finished_goods';
   const selectedItem = items.find(i => i.id === selectedItemId);
@@ -325,20 +343,28 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
             <div className="space-y-4">
               <label className="block text-sm font-bold text-black">Inspection Type</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {['incoming', 'finished_goods', 'in_process'].map((type) => (
-                  <label key={type} className={`flex flex-col items-center justify-center gap-2 cursor-pointer p-4 rounded-lg border transition ${meta.inspection_type === type ? 'bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-                    <input
-                      type="radio"
-                      name="inspection_type"
-                      value={type}
-                      checked={meta.inspection_type === type}
-                      onChange={handleChange}
-                      className="hidden"
-                    />
-                    <span className="font-bold text-sm capitalize">{type.replace('_', ' ')}</span>
-                    {meta.inspection_type === type && <Check className="w-4 h-4 text-blue-600" />}
-                  </label>
-                ))}
+                {['incoming', 'finished_goods', 'in_process'].map((type) => {
+                  // Custom display labels
+                  const typeLabels: Record<string, string> = {
+                    'incoming': 'Incoming',
+                    'finished_goods': 'Finished Goods',
+                    'in_process': 'Random Inspection'
+                  };
+                  return (
+                    <label key={type} className={`flex flex-col items-center justify-center gap-2 cursor-pointer p-4 rounded-lg border transition ${meta.inspection_type === type ? 'bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                      <input
+                        type="radio"
+                        name="inspection_type"
+                        value={type}
+                        checked={meta.inspection_type === type}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <span className="font-bold text-sm">{typeLabels[type]}</span>
+                      {meta.inspection_type === type && <Check className="w-4 h-4 text-blue-600" />}
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
