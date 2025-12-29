@@ -152,7 +152,7 @@ const parseGenerativeOutput = (text: string): { report: InspectionReport, summar
         report: JSON5.parse(jsonString),
         summary: remainingText
       };
-    } catch (e) {
+    } catch {
       // JSON5 parse failed, will try regex fallback
     }
   }

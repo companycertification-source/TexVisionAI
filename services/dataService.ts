@@ -376,7 +376,7 @@ export const dataService = {
         );
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         return true;
-      } catch (e) {
+      } catch {
         return false;
       }
     }
@@ -405,7 +405,7 @@ export const dataService = {
           return JSON.parse(stored);
         }
         return DEFAULT_ITEMS;
-      } catch (e) {
+      } catch {
         return DEFAULT_ITEMS;
       }
     }
