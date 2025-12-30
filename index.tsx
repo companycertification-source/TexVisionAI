@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
+import { RoleProvider } from './contexts/RoleContext';
 
 // Initialize Sentry for error monitoring
 // Get your DSN from: https://sentry.io -> Create Project -> React
@@ -96,8 +97,7 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-// Import RoleProvider dynamically to avoid circular dependencies
-import { RoleProvider } from './contexts/RoleContext';
+
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
