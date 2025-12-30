@@ -154,4 +154,14 @@ function generateMockScheduledInspections(): ScheduledInspection[] {
     );
 }
 
-export const MOCK_SCHEDULED_INSPECTIONS = generateMockScheduledInspections();
+// Lazy-loaded to prevent module initialization issues
+let _cachedScheduledInspections: ScheduledInspection[] | null = null;
+export const getMockScheduledInspections = (): ScheduledInspection[] => {
+    if (!_cachedScheduledInspections) {
+        _cachedScheduledInspections = generateMockScheduledInspections();
+    }
+    return _cachedScheduledInspections;
+};
+
+// Keep backward compatibility but use lazy getter
+export const MOCK_SCHEDULED_INSPECTIONS: ScheduledInspection[] = [];

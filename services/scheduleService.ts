@@ -10,7 +10,7 @@ import { WorkStation, InspectionSchedule, ScheduledInspection } from '../types';
 import {
     MOCK_WORK_STATIONS,
     MOCK_INSPECTION_SCHEDULES,
-    MOCK_SCHEDULED_INSPECTIONS
+    getMockScheduledInspections
 } from './mockScheduleData';
 
 // Shift time ranges (in 24h format)
@@ -201,7 +201,7 @@ export async function getScheduledInspections(
     try {
         // Return mock data if in demo mode
         if (isDemoMode()) {
-            let inspections = MOCK_SCHEDULED_INSPECTIONS.filter(i => i.shift_date === date);
+            let inspections = getMockScheduledInspections().filter(i => i.shift_date === date);
             if (shift) {
                 inspections = inspections.filter(i => i.schedule?.shift === shift);
             }
