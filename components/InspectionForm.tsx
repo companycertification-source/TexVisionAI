@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MetaData, ItemMaster } from '../types';
-import { Upload, User, ShieldCheck, X, Plus, Camera, Building2, Calculator, Ruler, Shirt, Printer, Minus, QrCode, Layers, ArrowRight, ArrowLeft, Check, AlertCircle, Settings2, ChevronDown, FileText, Clock, Zap, Search } from 'lucide-react';
+import { MetaData, ItemMaster, WorkStation } from '../types';
+import { Upload, User, ShieldCheck, X, Plus, Camera, Building2, Calculator, Ruler, Shirt, Printer, Minus, QrCode, Layers, ArrowRight, ArrowLeft, Check, AlertCircle, Settings2, ChevronDown, FileText, Clock, Zap, Search, Factory } from 'lucide-react';
 import { useRateLimit } from '../hooks/useRateLimit';
 
 // Image limits for cost optimization (batch processing requires 4+ images)
@@ -13,7 +13,9 @@ interface InspectionFormProps {
   inspectorName: string;
   suppliers: string[];
   items?: ItemMaster[];
+  workStations?: WorkStation[];
   onItemSelect?: (item: ItemMaster | null) => void;
+  preSelectedWorkStation?: { id: string; name: string };
 }
 
 // Pre-filled mock metadata for Textile context
@@ -105,7 +107,7 @@ const STEPS = [
   { id: 4, title: 'Inspection', icon: Camera },
 ];
 
-export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnalyzing, inspectorName, suppliers, items = [], onItemSelect }) => {
+export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnalyzing, inspectorName, suppliers, items = [], workStations = [], onItemSelect }) => {
   const [meta, setMeta] = useState<MetaData>({ ...INITIAL_META, inspector_name: inspectorName });
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -357,7 +359,7 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
                   const typeLabels: Record<string, string> = {
                     'incoming': 'Incoming',
                     'finished_goods': 'Finished Goods',
-                    'in_process': 'Random Inspection'
+                    'in_process': 'In-Process'
                   };
                   return (
                     <label key={type} className={`flex flex-col items-center justify-center gap-2 cursor-pointer p-4 rounded-lg border transition ${meta.inspection_type === type ? 'bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
@@ -410,6 +412,37 @@ export const InspectionForm: React.FC<InspectionFormProps> = ({ onSubmit, isAnal
                 <span className="font-medium">{inspectorName}</span>
               </div>
             </div>
+
+            {/* Work Station selector for In-Process Inspection */}
+            {isRandomInspection && (
+              <div className="animate-fadeIn">
+                <label className="block text-sm font-bold text-black mb-1">Work Station / Production Line <span className="text-red-500">*</span></label>
+                <select
+                  name="work_station_id"
+                  value={meta.work_station_id || ''}
+                  onChange={(e) => {
+                    const ws = workStations.find(w => w.id === e.target.value);
+                    setMeta(prev => ({
+                      ...prev,
+                      work_station_id: e.target.value,
+                      work_station_name: ws?.name || ''
+                    }));
+                  }}
+                  className="w-full px-3 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                >
+                  <option value="">-- Select Work Station --</option>
+                  {workStations.filter(ws => ws.is_active).map((ws) => (
+                    <option key={ws.id} value={ws.id}>{ws.name} ({ws.code})</option>
+                  ))}
+                </select>
+                {workStations.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    No work stations configured. Please add work stations first.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

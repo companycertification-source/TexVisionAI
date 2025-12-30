@@ -79,7 +79,7 @@ const resizeImage = async (
       const dataUrl = canvas.toDataURL('image/jpeg', quality);
       const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
       if (match) {
-        resolve({ mimeType: match[1] || 'image/jpeg', data: match[2] || '' });
+        resolve({ mimeType: match[1] ?? 'image/jpeg', data: match[2] ?? '' });
       } else {
         reject(new Error("Failed to resize image"));
       }

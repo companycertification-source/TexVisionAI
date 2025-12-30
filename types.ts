@@ -164,6 +164,41 @@ export interface ItemMaster {
   };
 }
 
+// Work Station / Production Line
+export interface WorkStation {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+// Inspection Schedule (frequency per work station/shift)
+export interface InspectionSchedule {
+  id: string;
+  work_station_id: string;
+  work_station?: WorkStation;
+  shift: 'morning' | 'afternoon' | 'night';
+  frequency_per_hour: number;
+  interval_minutes: number;
+  is_active: boolean;
+}
+
+// Scheduled Inspection Tracking
+export interface ScheduledInspection {
+  id: string;
+  schedule_id: string;
+  schedule?: InspectionSchedule;
+  shift_date: string;
+  expected_time: string;
+  status: 'pending' | 'completed' | 'missed';
+  completed_at?: string;
+  completed_by?: string;
+  inspection_id?: string;
+  notes?: string;
+}
+
 export interface MetaData {
   inspection_type: 'incoming' | 'finished_goods' | 'in_process';
   supplier_name: string;
@@ -190,11 +225,14 @@ export interface MetaData {
   };
   inspection_mode?: 'quick' | 'detailed';
   category?: string; // For Random Inspection when no item is selected
+  // In-Process Inspection fields
+  work_station_id?: string;
+  work_station_name?: string;
 }
 
 export interface AppState {
-  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors' | 'admin';
-  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors' | 'admin';
+  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors' | 'admin' | 'schedule';
+  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors' | 'admin' | 'schedule';
   meta: MetaData;
   history: InspectionReport[];
   items: ItemMaster[];

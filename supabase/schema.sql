@@ -81,3 +81,58 @@ create policy "Enable select for usage_logs" on usage_logs for select using (tru
 -- create policy "Public Access" on storage.objects for select using ( bucket_id = 'inspection-images' );
 -- create policy "Authenticated Upload" on storage.objects for insert with check ( bucket_id = 'inspection-images' );
 -- create policy "Authenticated Delete" on storage.objects for delete using ( bucket_id = 'inspection-images' );
+
+
+-- 5. Work Stations / Production Lines
+create table if not exists work_stations (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  code text not null unique,
+  description text,
+  is_active boolean default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table work_stations enable row level security;
+create policy "Enable all access for work_stations" on work_stations
+  for all using (true) with check (true);
+
+
+-- 6. Inspection Schedules (frequency per work station/shift)
+create table if not exists inspection_schedules (
+  id uuid default uuid_generate_v4() primary key,
+  work_station_id uuid references work_stations(id) on delete cascade,
+  shift text not null check (shift in ('morning', 'afternoon', 'night')),
+  frequency_per_hour numeric default 1,
+  interval_minutes integer default 60,
+  is_active boolean default true,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(work_station_id, shift)
+);
+
+alter table inspection_schedules enable row level security;
+create policy "Enable all access for inspection_schedules" on inspection_schedules
+  for all using (true) with check (true);
+
+
+-- 7. Scheduled Inspection Tracking
+create table if not exists scheduled_inspections (
+  id uuid default uuid_generate_v4() primary key,
+  schedule_id uuid references inspection_schedules(id) on delete cascade,
+  shift_date date not null,
+  expected_time timestamp with time zone not null,
+  status text default 'pending' check (status in ('pending', 'completed', 'missed')),
+  completed_at timestamp with time zone,
+  completed_by text,
+  inspection_id uuid references inspections(id),
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table scheduled_inspections enable row level security;
+create policy "Enable all access for scheduled_inspections" on scheduled_inspections
+  for all using (true) with check (true);
+
+-- Index for efficient date-based queries
+create index if not exists idx_scheduled_inspections_date on scheduled_inspections(shift_date, status);
+

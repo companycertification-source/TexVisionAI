@@ -74,7 +74,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ history, onViewReport,
       .sort(([, a], [, b]) => b - a)
       .map(([name, value]) => ({ name: name.replace(/_/g, ' '), value }));
 
-    const topDefect = sortedDefects.length > 0 ? sortedDefects[0]?.name : 'None';
+    const topDefect = sortedDefects.length > 0 ? (sortedDefects[0]?.name ?? 'None') : 'None';
 
     // Timeline Data (Sort by date)
     const timelineData = Object.entries(timelineMap)

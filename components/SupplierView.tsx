@@ -40,7 +40,7 @@ export const SupplierView: React.FC<SupplierViewProps> = ({ history, onBack, onV
   // 1. Filter raw history
   const filteredHistory = useMemo(() => {
     return history.filter(report => {
-      const reportDate = new Date(report.inspection_header.inspection_date_time).toISOString().split('T')[0] || '';
+      const reportDate = new Date(report.inspection_header.inspection_date_time).toISOString().split('T')[0] ?? '';
       const matchesDate = filterDate ? reportDate >= filterDate : true;
       return matchesDate;
     });
@@ -321,7 +321,7 @@ export const SupplierView: React.FC<SupplierViewProps> = ({ history, onBack, onV
                   <YAxis tick={{ fontSize: 12 }} unit="%" />
                   <Tooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                    formatter={(value: number | undefined) => [`${(value || 0).toFixed(1)}%`, 'Defect Rate']}
+                    formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(1)}%`, 'Defect Rate'] as [string, string]}
                   />
                   <Line
                     type="monotone"
