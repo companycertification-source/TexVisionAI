@@ -69,6 +69,16 @@ All TypeScript errors have been resolved. The project now builds successfully wi
 - Positioned between "Performance" and "Admin" in navbar
 - Manager role badge displays as "Demo Manager" on login
 
+### 4. Admin Analytics Dashboard - IMPLEMENTED ✅
+- Added "Resource Monitor" tab to Admin Panel
+- **Key Metrics:** Total Cost, API Requests, Token Consumption, Storage Usage
+- **Visuals:** 
+  - Daily API Usage Trend (Area Chart)
+  - Cost Analysis (Bar Chart)
+  - Storage Growth (Line Chart)
+- **Data Source:** robustly mocks data for demo purposes if Supabase logs are empty
+- **Pricing:** Integrated Gemini 1.5 Flash pricing estimates
+
 **Navigation:**
 - `App.tsx` updated with `isManager` check
 - Schedule Monitor integrated into main app flow
