@@ -90,16 +90,15 @@ All TypeScript errors have been resolved. The project now builds successfully wi
 - **Pricing:** Integrated Gemini 1.5 Flash pricing estimates
 
 ### 5. UI Enhancements & Refinements - IMPLEMENTED ✅
-- **Schedule Monitor (Matrix View):**
-  - Redesigned as "Routine Monitor" with specific Morning/Afternoon/Night shift tabs.
-  - Implemented Matrix timeline grid (Station vs Hour).
-  - Status Indicators: Pending (Yellow), Completed (Green), Overdue (Red).
-  - Auto-refreshing "Live" clock and data frequency logic.
-- **Work Station Center (Card Grid):**
-  - Redesigned as "Work Stations & Shifts" dashboard.
-  - Implemented Card Grid layout with quick "Active" toggles.
-  - KPI Cards: Total Stations, Active, Production Lines, Workstations.
-  - Added placeholders for Shift Management tab.
+- **Schedule Monitor (Routine Monitor):**
+  - **Matrix Grid:** Fully implemented shift-based hourly grid.
+  - **Frequency Logic:** Visual slots respect station frequency ('1h', '2h', etc.), skipping columns appropriately.
+  - **Status Indicators:** Overdue (Red Pulse), Pending (Amber Clock), Completed (Green Check).
+  - **Controls:** Live clock, Shift Tabs (Morning/Afternoon/Night), Play/Refresh.
+- **Work Station Center:**
+  - **New Station Modal:** Redesigned with visual "Production Line" vs "Workstation" selector.
+  - **Fields:** Added Location (with icon) and refined Frequency dropdown to match design.
+  - **KPIs:** Added summary cards for Total, Active, Lines, etc.
 
 
 **Navigation:**
