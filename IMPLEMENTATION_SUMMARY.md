@@ -58,12 +58,13 @@ All TypeScript errors have been resolved. The project now builds successfully wi
 - Added "Demo Manager" login button (blue button) next to "Demo Inspector"
 
 **Manager Permissions:**
+- **Work Station Center:** Create, Edit, Delete production lines and work stations (Manager Only)
 - Access to Schedule Monitor (view and manage inspection schedules)
-- Access to Work Station configuration
 - Access to all inspector features
 - Admins automatically have manager permissions
 
 **UI Changes:**
+- New "Stations" navigation button (Factory icon) visible to managers
 - New "Schedule" navigation button (Clock icon) visible to managers
 - Positioned between "Performance" and "Admin" in navbar
 - Manager role badge displays as "Demo Manager" on login

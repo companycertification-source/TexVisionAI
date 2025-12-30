@@ -231,8 +231,8 @@ export interface MetaData {
 }
 
 export interface AppState {
-  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors' | 'admin' | 'schedule';
-  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors' | 'admin' | 'schedule';
+  step: 'login' | 'input' | 'analyzing' | 'report' | 'history' | 'suppliers' | 'items' | 'inspectors' | 'admin' | 'schedule' | 'workstations';
+  previousStep?: 'history' | 'suppliers' | 'input' | 'items' | 'inspectors' | 'admin' | 'schedule' | 'workstations';
   meta: MetaData;
   history: InspectionReport[];
   items: ItemMaster[];

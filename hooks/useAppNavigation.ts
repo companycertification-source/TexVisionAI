@@ -22,6 +22,7 @@ export const useAppNavigation = () => {
     const goToInspectors = () => setStep('inspectors');
     const goToAdmin = () => setStep('admin');
     const goToSchedule = () => setStep('schedule');
+    const goToWorkStations = () => setStep('workstations');
 
     const goToReport = () => {
         // Logic from App.tsx: when viewing a report, we want to know where we came from
@@ -46,6 +47,7 @@ export const useAppNavigation = () => {
         goToInspectors,
         goToAdmin,
         goToSchedule,
+        goToWorkStations,
         goToReport,
         goBack
     };

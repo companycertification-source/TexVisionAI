@@ -8,12 +8,14 @@ import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
 import { AdminPanel } from './components/AdminPanel';
 import { ScheduleMonitor } from './components/ScheduleMonitor';
+import { WorkStationCenter } from './components/WorkStationCenter';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';
 import { dataService } from './services/dataService';
-import { MetaData, InspectionReport, ItemMaster } from './types';
-import { Shield, Scissors, Activity, LayoutDashboard, Shirt, Users, UserCheck, Camera, LogOut, Settings, Clock } from 'lucide-react';
+import { getWorkStations } from './services/scheduleService';
+import { MetaData, InspectionReport, ItemMaster, WorkStation } from './types';
+import { Shield, Scissors, Activity, LayoutDashboard, Shirt, Users, UserCheck, Camera, LogOut, Settings, Clock, Factory } from 'lucide-react';
 import { useInspection } from './hooks/useInspection';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
@@ -46,11 +48,12 @@ const App: React.FC = () => {
   const isManager = user?.role === 'manager' || isAdmin;
 
   // Navigation State
-  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToSchedule, goToReport, goBack } = useAppNavigation();
+  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToSchedule, goToWorkStations, goToReport, goBack } = useAppNavigation();
 
   // Data State
   const [history, setHistory] = useState<InspectionReport[]>([]);
   const [items, setItems] = useState<ItemMaster[]>([]);
+  const [workStations, setWorkStations] = useState<WorkStation[]>([]);
   const [baseSuppliers, setBaseSuppliers] = useState<string[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(false);
 
@@ -99,7 +102,8 @@ const App: React.FC = () => {
           Promise.all([
             dataService.getItems().catch(() => []),
             dataService.getHistory().catch(() => []),
-            dataService.getSuppliers().catch(() => [])
+            dataService.getSuppliers().catch(() => []),
+            getWorkStations().catch(() => [])
           ]),
           new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('Data timeout')), 4000))
         ]);
@@ -108,6 +112,7 @@ const App: React.FC = () => {
           setItems(results[0]);
           setHistory(results[1]);
           setBaseSuppliers(results[2]);
+          setWorkStations(results[3]);
           console.log('[App] Data loaded successfully');
         }
       } catch (error) {
@@ -230,10 +235,16 @@ const App: React.FC = () => {
                 </button>
 
                 {isManager && (
-                  <button onClick={goToSchedule} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'schedule' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
-                    <Clock className="w-4 h-4" />
-                    <span className="hidden lg:inline">Schedule</span>
-                  </button>
+                  <>
+                    <button onClick={goToSchedule} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'schedule' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+                      <Clock className="w-4 h-4" />
+                      <span className="hidden lg:inline">Schedule</span>
+                    </button>
+                    <button onClick={goToWorkStations} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'workstations' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+                      <Factory className="w-4 h-4" />
+                      <span className="hidden lg:inline">Stations</span>
+                    </button>
+                  </>
                 )}
 
                 {isAdmin && (
@@ -286,6 +297,7 @@ const App: React.FC = () => {
                 inspectorName={meta.inspector_name}
                 suppliers={suppliers}
                 items={items}
+                workStations={workStations}
                 onItemSelect={setSelectedItemContext}
               />
               <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
@@ -340,6 +352,12 @@ const App: React.FC = () => {
         {isAuthenticated && step === 'schedule' && isManager && (
           <ErrorBoundary>
             <ScheduleMonitor onBack={handleManualReset} />
+          </ErrorBoundary>
+        )}
+
+        {isAuthenticated && step === 'workstations' && isManager && (
+          <ErrorBoundary>
+            <WorkStationCenter onBack={handleManualReset} />
           </ErrorBoundary>
         )}
 
