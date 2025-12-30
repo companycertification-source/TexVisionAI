@@ -7,12 +7,13 @@ import { SupplierView } from './components/SupplierView';
 import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
 import { AdminPanel } from './components/AdminPanel';
+import { ScheduleMonitor } from './components/ScheduleMonitor';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';
 import { dataService } from './services/dataService';
 import { MetaData, InspectionReport, ItemMaster } from './types';
-import { Shield, Scissors, Activity, LayoutDashboard, Shirt, Users, UserCheck, Camera, LogOut, Settings } from 'lucide-react';
+import { Shield, Scissors, Activity, LayoutDashboard, Shirt, Users, UserCheck, Camera, LogOut, Settings, Clock } from 'lucide-react';
 import { useInspection } from './hooks/useInspection';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
@@ -42,9 +43,10 @@ const App: React.FC = () => {
   // Auth & Role State
   const { user, isAuthenticated, logout: authLogout } = useAuth();
   const { isAdmin, role, isLoading: isRoleLoading } = useRole();
+  const isManager = user?.role === 'manager' || isAdmin;
 
   // Navigation State
-  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToReport, goBack } = useAppNavigation();
+  const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToSchedule, goToReport, goBack } = useAppNavigation();
 
   // Data State
   const [history, setHistory] = useState<InspectionReport[]>([]);
@@ -227,6 +229,13 @@ const App: React.FC = () => {
                   <span className="hidden lg:inline">Performance</span>
                 </button>
 
+                {isManager && (
+                  <button onClick={goToSchedule} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'schedule' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+                    <Clock className="w-4 h-4" />
+                    <span className="hidden lg:inline">Schedule</span>
+                  </button>
+                )}
+
                 {isAdmin && (
                   <button onClick={goToAdmin} className={`flex items-center gap-2 text-sm font-medium transition-colors ${step === 'admin' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
                     <Settings className="w-4 h-4" />
@@ -325,6 +334,12 @@ const App: React.FC = () => {
         {isAuthenticated && step === 'inspectors' && (
           <ErrorBoundary>
             <InspectorView history={history} currentInspector={meta.inspector_name} onBack={handleManualReset} onViewReport={handleSelectHistoryReport} />
+          </ErrorBoundary>
+        )}
+
+        {isAuthenticated && step === 'schedule' && isManager && (
+          <ErrorBoundary>
+            <ScheduleMonitor onBack={handleManualReset} />
           </ErrorBoundary>
         )}
 

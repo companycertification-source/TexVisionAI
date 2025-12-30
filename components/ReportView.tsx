@@ -287,26 +287,218 @@ export const ReportView: React.FC<ReportViewProps> = ({
           )}
 
           {activeTab === 'defects' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {images.map((img, idx) => (
-                <div key={idx} className="group relative rounded-xl overflow-hidden shadow-sm border border-gray-200 bg-gray-900">
-                  <img src={report.imageUrls?.[idx] || ''} alt={`Inspection ${idx}`} className="w-full h-64 object-cover opacity-90 group-hover:opacity-100 transition" />
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-blue-500" /> Inspection Images & Findings
+                </h3>
+                <span className="text-sm text-gray-500">{images.length} image{images.length !== 1 ? 's' : ''} analyzed</span>
+              </div>
 
-                  {/* Overlay Badges */}
-                  <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-                    {img.defects.map((d, dIdx) => (
-                      <span key={dIdx} className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-                        {d.class.replace(/_/g, ' ')}
-                      </span>
-                    ))}
-                  </div>
+              {images.map((img, idx) => {
+                const imageUrl = previewUrls?.[idx] || report.imageUrls?.[idx] || '';
+                const hasDefects = img.defects.length > 0;
+                const criticalDefects = img.defects.filter(d => d.severity === 'critical');
+                const majorDefects = img.defects.filter(d => d.severity === 'major');
+                const minorDefects = img.defects.filter(d => d.severity === 'minor');
 
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <p className="text-white font-bold text-sm">Image #{idx + 1}</p>
-                    <p className="text-gray-300 text-xs">{img.defects.length} Issues Detected</p>
+                return (
+                  <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition">
+                    {/* Image Header */}
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 px-6 py-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-100 p-2 rounded-lg">
+                            <Camera className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900">Image #{idx + 1}</h4>
+                            <p className="text-xs text-gray-500">
+                              Status: <span className={`font-bold ${img.status === 'accepted' ? 'text-green-600' : 'text-red-600'}`}>
+                                {img.status.replace(/_/g, ' ').toUpperCase()}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {criticalDefects.length > 0 && (
+                            <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full border border-red-200">
+                              {criticalDefects.length} Critical
+                            </span>
+                          )}
+                          {majorDefects.length > 0 && (
+                            <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full border border-orange-200">
+                              {majorDefects.length} Major
+                            </span>
+                          )}
+                          {minorDefects.length > 0 && (
+                            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-200">
+                              {minorDefects.length} Minor
+                            </span>
+                          )}
+                          {!hasDefects && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" /> No Issues
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Image and Findings Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                      {/* Image Display */}
+                      <div className="space-y-3">
+                        <div className="relative rounded-lg overflow-hidden bg-gray-100 border border-gray-200 shadow-inner">
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={`Inspection ${idx + 1}`}
+                              className="w-full h-auto object-contain max-h-96"
+                              onError={(e) => {
+                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="16"%3EImage not available%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-64 flex items-center justify-center text-gray-400">
+                              <div className="text-center">
+                                <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Image not available</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* OCR Results */}
+                        {img.ocr_results && (
+                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <h5 className="text-xs font-bold text-blue-900 uppercase mb-2 flex items-center gap-1">
+                              <FileText className="w-3 h-3" /> Detected Text
+                            </h5>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {img.ocr_results.brand && (
+                                <div>
+                                  <span className="text-blue-600 font-medium">Brand:</span>
+                                  <span className="ml-1 text-gray-700">{img.ocr_results.brand}</span>
+                                </div>
+                              )}
+                              {img.ocr_results.style_number && (
+                                <div>
+                                  <span className="text-blue-600 font-medium">Style:</span>
+                                  <span className="ml-1 text-gray-700">{img.ocr_results.style_number}</span>
+                                </div>
+                              )}
+                              {img.ocr_results.batch_lot_number && (
+                                <div>
+                                  <span className="text-blue-600 font-medium">Batch:</span>
+                                  <span className="ml-1 text-gray-700">{img.ocr_results.batch_lot_number}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Findings List */}
+                      <div className="space-y-3">
+                        <h5 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-gray-500" />
+                          Detected Issues ({img.defects.length})
+                        </h5>
+
+                        {hasDefects ? (
+                          <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                            {img.defects.map((defect, dIdx) => (
+                              <div
+                                key={dIdx}
+                                className={`p-4 rounded-lg border-l-4 ${defect.severity === 'critical' ? 'bg-red-50 border-red-500' :
+                                    defect.severity === 'major' ? 'bg-orange-50 border-orange-500' :
+                                      'bg-yellow-50 border-yellow-500'
+                                  }`}
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <h6 className={`font-bold text-sm capitalize ${defect.severity === 'critical' ? 'text-red-900' :
+                                        defect.severity === 'major' ? 'text-orange-900' :
+                                          'text-yellow-900'
+                                      }`}>
+                                      {defect.class.replace(/_/g, ' ')}
+                                    </h6>
+                                    <p className={`text-xs mt-1 ${defect.severity === 'critical' ? 'text-red-700' :
+                                        defect.severity === 'major' ? 'text-orange-700' :
+                                          'text-yellow-700'
+                                      }`}>
+                                      {defect.description}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-1 ml-3">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${defect.severity === 'critical' ? 'bg-red-200 text-red-900' :
+                                        defect.severity === 'major' ? 'bg-orange-200 text-orange-900' :
+                                          'bg-yellow-200 text-yellow-900'
+                                      }`}>
+                                      {defect.severity}
+                                    </span>
+                                    {defect.count > 1 && (
+                                      <span className="text-xs font-bold text-gray-600">
+                                        ×{defect.count}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Location indicators */}
+                                {defect.locations && defect.locations.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {defect.locations.slice(0, 3).map((loc, locIdx) => (
+                                      <span key={locIdx} className="text-[10px] px-2 py-0.5 bg-white/60 rounded border border-gray-300 text-gray-600">
+                                        Location {locIdx + 1}
+                                      </span>
+                                    ))}
+                                    {defect.locations.length > 3 && (
+                                      <span className="text-[10px] px-2 py-0.5 bg-white/60 rounded border border-gray-300 text-gray-600">
+                                        +{defect.locations.length - 3} more
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-8 text-center bg-green-50 rounded-lg border border-green-200">
+                            <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                            <p className="text-sm font-bold text-green-900">No defects detected</p>
+                            <p className="text-xs text-green-700 mt-1">This image passed inspection</p>
+                          </div>
+                        )}
+
+                        {/* Item Counts */}
+                        {img.counts && (
+                          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div>
+                                <span className="text-gray-500">Visible Items:</span>
+                                <span className="ml-2 font-bold text-gray-900">{img.counts.visible_items || 0}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Cartons:</span>
+                                <span className="ml-2 font-bold text-gray-900">{img.counts.visible_cartons || 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                );
+              })}
+
+              {images.length === 0 && (
+                <div className="p-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <Camera className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">No images available for this inspection</p>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

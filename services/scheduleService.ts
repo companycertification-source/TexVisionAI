@@ -7,6 +7,11 @@
 
 import { supabase } from './supabaseClient';
 import { WorkStation, InspectionSchedule, ScheduledInspection } from '../types';
+import {
+    MOCK_WORK_STATIONS,
+    MOCK_INSPECTION_SCHEDULES,
+    MOCK_SCHEDULED_INSPECTIONS
+} from './mockScheduleData';
 
 // Shift time ranges (in 24h format)
 export const SHIFT_TIMES = {
@@ -21,6 +26,9 @@ export const SHIFT_LABELS = {
     night: 'Night (10PM - 6AM)'
 };
 
+// Helper to check if we're in demo mode (no Supabase)
+const isDemoMode = () => !supabase;
+
 // Helper to check if supabase is initialized
 function ensureSupabase() {
     if (!supabase) {
@@ -33,6 +41,11 @@ function ensureSupabase() {
 
 export async function getWorkStations(): Promise<WorkStation[]> {
     try {
+        // Return mock data if in demo mode
+        if (isDemoMode()) {
+            return Promise.resolve(MOCK_WORK_STATIONS);
+        }
+
         const client = ensureSupabase();
         const { data, error } = await client
             .from('work_stations')
@@ -111,6 +124,14 @@ export async function deleteWorkStation(id: string): Promise<boolean> {
 
 export async function getSchedules(workStationId?: string): Promise<InspectionSchedule[]> {
     try {
+        // Return mock data if in demo mode
+        if (isDemoMode()) {
+            const schedules = workStationId
+                ? MOCK_INSPECTION_SCHEDULES.filter(s => s.work_station_id === workStationId)
+                : MOCK_INSPECTION_SCHEDULES;
+            return Promise.resolve(schedules);
+        }
+
         const client = ensureSupabase();
         let query = client
             .from('inspection_schedules')
@@ -178,6 +199,15 @@ export async function getScheduledInspections(
     shift?: 'morning' | 'afternoon' | 'night'
 ): Promise<ScheduledInspection[]> {
     try {
+        // Return mock data if in demo mode
+        if (isDemoMode()) {
+            let inspections = MOCK_SCHEDULED_INSPECTIONS.filter(i => i.shift_date === date);
+            if (shift) {
+                inspections = inspections.filter(i => i.schedule?.shift === shift);
+            }
+            return Promise.resolve(inspections);
+        }
+
         const client = ensureSupabase();
         let query = client
             .from('scheduled_inspections')

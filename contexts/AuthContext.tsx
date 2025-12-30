@@ -14,7 +14,7 @@ export interface AuthUser {
     id: string;
     email: string;
     name: string;
-    role: 'inspector' | 'admin' | 'viewer';
+    role: 'inspector' | 'admin' | 'manager' | 'viewer';
     createdAt: string;
 }
 
@@ -32,6 +32,7 @@ interface AuthContextType extends AuthState {
     loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     demoLogin: () => void;
+    demoManagerLogin: () => void;
     clearError: () => void;
 }
 
@@ -322,6 +323,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         auditLog.loginSuccess(user);
     };
 
+    // Demo Manager login
+    const demoManagerLogin = () => {
+        const user: AuthUser = {
+            id: 'demo-manager',
+            email: 'manager@texvision.ai',
+            name: 'Demo Manager',
+            role: 'manager',
+            createdAt: new Date().toISOString(),
+        };
+
+        // Store session with expiry
+        const session = {
+            user,
+            expiresAt: Date.now() + SESSION_TIMEOUT_MS,
+        };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+
+        setState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+        });
+
+        // Audit log
+        auditLog.loginSuccess(user);
+    };
+
     // Google OAuth login
     const loginWithGoogle = async (): Promise<void> => {
         console.log('[Auth] loginWithGoogle called');
@@ -443,6 +472,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 loginWithGoogle,
                 logout,
                 demoLogin,
+                demoManagerLogin,
                 clearError,
             }}
         >

@@ -7,7 +7,7 @@ interface LoginViewProps {
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
-  const { login, loginWithGoogle, demoLogin, isLoading, error, clearError } = useAuth();
+  const { login, loginWithGoogle, demoLogin, demoManagerLogin, isLoading, error, clearError } = useAuth();
 
   const [showInfo, setShowInfo] = useState(false);
   const [email, setEmail] = useState('');
@@ -26,6 +26,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
   const handleDemoLogin = () => {
     demoLogin();
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    }
+  };
+
+  const handleDemoManagerLogin = () => {
+    demoManagerLogin();
     if (onLoginSuccess) {
       onLoginSuccess();
     }
@@ -161,14 +168,22 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleDemoLogin}
                 disabled={isLoading}
                 className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition-all text-sm disabled:opacity-50"
               >
                 <UserCheck className="w-4 h-4" />
-                Demo Login
+                Demo Inspector
+              </button>
+              <button
+                onClick={handleDemoManagerLogin}
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-3 px-4 rounded-xl transition-all text-sm disabled:opacity-50"
+              >
+                <Shield className="w-4 h-4" />
+                Demo Manager
               </button>
             </div>
 
