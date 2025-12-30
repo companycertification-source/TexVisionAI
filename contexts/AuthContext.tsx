@@ -33,6 +33,7 @@ interface AuthContextType extends AuthState {
     logout: () => Promise<void>;
     demoLogin: () => void;
     demoManagerLogin: () => void;
+    demoAdminLogin: () => void;
     clearError: () => void;
 }
 
@@ -351,6 +352,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         auditLog.loginSuccess(user);
     };
 
+    // Demo Admin login
+    const demoAdminLogin = () => {
+        const user: AuthUser = {
+            id: 'demo-admin',
+            email: 'admin@texvision.ai',
+            name: 'Demo Admin',
+            role: 'admin',
+            createdAt: new Date().toISOString(),
+        };
+
+        // Store session with expiry
+        const session = {
+            user,
+            expiresAt: Date.now() + SESSION_TIMEOUT_MS,
+        };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+
+        setState({
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+        });
+
+        // Audit log
+        auditLog.loginSuccess(user);
+    };
+
     // Google OAuth login
     const loginWithGoogle = async (): Promise<void> => {
         console.log('[Auth] loginWithGoogle called');
@@ -473,6 +502,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 logout,
                 demoLogin,
                 demoManagerLogin,
+                demoAdminLogin,
                 clearError,
             }}
         >

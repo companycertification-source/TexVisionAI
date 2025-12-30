@@ -7,7 +7,7 @@ import {
     getRoleDisplayName,
     getRoleBadgeColor
 } from '../services/roleService';
-import { analyticsService, AnalyticsSummary } from '../services/analyticsService';
+import { analyticsService, AnalyticsSummary, formatBytes } from '../services/analyticsService';
 import { useRole } from '../contexts/RoleContext';
 import {
     Users,
@@ -438,7 +438,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                     <YAxis fontSize={10} tickLine={false} axisLine={false} unit="$" />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                        formatter={(value: number) => [`$${value.toFixed(4)}`, 'Cost']}
+                                                        formatter={(value: any) => [`$${Number(value).toFixed(4)}`, 'Cost']}
                                                     />
                                                     <Bar dataKey="cost" fill="#10b981" radius={[4, 4, 0, 0]} name="Est. Cost" />
                                                 </BarChart>
@@ -466,7 +466,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                                 <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val / (1024 * 1024)).toFixed(0)}MB`} />
                                                 <Tooltip
                                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                    formatter={(value: number) => [formatBytes(value), 'Storage']}
+                                                    formatter={(value: any) => [formatBytes(Number(value)), 'Storage']}
                                                 />
                                                 <Line type="monotone" dataKey="storageBytes" stroke="#f97316" strokeWidth={2} dot={false} activeDot={{ r: 6 }} name="Storage" />
                                             </LineChart>
