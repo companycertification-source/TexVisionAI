@@ -172,6 +172,9 @@ export interface WorkStation {
   description?: string;
   is_active: boolean;
   created_at?: string;
+  type?: 'production_line' | 'workstation';
+  location?: string;
+  frequency?: string;
 }
 
 // Inspection Schedule (frequency per work station/shift)

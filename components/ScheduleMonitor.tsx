@@ -3,29 +3,29 @@
  * 
  * Real-time monitoring dashboard for In-Process Inspections.
  * Shows scheduled vs completed inspections in a matrix/timeline view.
+ * Matches specific UI requirements: Routine Monitor with Shift Matrix.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Calendar,
     Clock,
-    CheckCircle2,
-    AlertCircle,
-    Timer,
+    Check,
+    AlertTriangle, // Changed from AlertCircle to match screenshot triangle style
     RefreshCw,
     Factory,
     Play,
     ArrowLeft,
-    Settings,
     Plus,
-    Check
+    Wrench,
+    MoreHorizontal
 } from 'lucide-react';
 import {
     getScheduledInspections,
     getWorkStations,
     generateDailySchedule,
     getCurrentShift,
-    isOverdue,
+    isOverdue, // We might override this with local visual logic
     SHIFT_LABELS
 } from '../services/scheduleService';
 import { ScheduledInspection, WorkStation } from '../types';
@@ -70,15 +70,21 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Fetch ALL scheduled inspections for the day (or specific logic for night shift spanning days)
-            // For simplicity, we fetch all and filter client-side for the matrix if needed, 
-            // but the service filter helps reduce payload
             const [inspections, stations] = await Promise.all([
                 getScheduledInspections(selectedDate, activeShift),
                 getWorkStations()
             ]);
             setScheduledInspections(inspections);
-            setWorkStations(stations);
+            // Sort stations: Production Lines first? Or Alphabetical?
+            // Let's sort simply by name for now, or ensure Lines are top.
+            const sortedStations = [...stations].sort((a, b) => {
+                const aIsLine = a.type === 'production_line' || a.name.includes('Line');
+                const bIsLine = b.type === 'production_line' || b.name.includes('Line');
+                if (aIsLine && !bIsLine) return -1;
+                if (!aIsLine && bIsLine) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            setWorkStations(sortedStations);
             setLastRefresh(new Date());
         } catch (error) {
             console.error('[ScheduleMonitor] Error fetching data:', error);
@@ -114,13 +120,57 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
     };
 
     // --- Statistics ---
+    // We calculate these based on the VIEW, not just the raw data, for consistency
     const stats = {
-        total: scheduledInspections.length,
-        completed: scheduledInspections.filter(i => i.status === 'completed').length,
-        pending: scheduledInspections.filter(i => i.status === 'pending' && !isOverdue(i.expected_time)).length,
-        overdue: scheduledInspections.filter(i => i.status === 'pending' && isOverdue(i.expected_time)).length,
-        missed: scheduledInspections.filter(i => i.status === 'missed').length
+        total: 0,
+        completed: 0,
+        pending: 0,
+        overdue: 0
     };
+
+    // We'll calculate stats during render or in a useMemo to match the visual grid exactly
+    // Simpler: iterate logical slots
+    const calculateStats = () => {
+        let completed = 0;
+        let pending = 0;
+        let overdue = 0;
+        const currentHours = SHIFT_HOURS[activeShift];
+        const currentHourIndex = currentHours.indexOf(currentTime.getHours());
+
+        workStations.forEach(station => {
+            currentHours.forEach((hour, index) => {
+                if (shouldShowSlot(station, index)) {
+                    const inspection = findInspection(station.id, hour);
+                    if (inspection && inspection.status === 'completed') {
+                        completed++;
+                    } else {
+                        // Not completed
+                        // Check if past or present
+                        const isPast = index < currentHourIndex;
+                        const isNow = index === currentHourIndex;
+
+                        // Special case: if we are in a different shift than current time, logic differs
+                        // Assume monitoring active shift.
+
+                        if (activeShift !== getCurrentShift() && activeShift !== 'night') {
+                            // Viewing past shift?
+                            // Simple logic: if shift is "morning" and now is "afternoon", all uncompleted are overdue?
+                            // For simplicity, we stick to "Is Past Time Slot" logic.
+                        }
+
+                        if (isPast) {
+                            overdue++;
+                        } else {
+                            pending++;
+                        }
+                    }
+                }
+            });
+        });
+        return { completed, pending, overdue };
+    };
+
+    const currentStats = calculateStats();
 
     // --- Render Helpers ---
 
@@ -128,7 +178,17 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
         return `${hour.toString().padStart(2, '0')}:00`;
     };
 
-    // Find inspection for a specific station at a specific hour
+    // Helper to determine if a slot should be active based on frequency
+    const shouldShowSlot = (station: WorkStation, hourIndex: number) => {
+        const freq = station.frequency || '1h';
+        if (freq === '1h') return true;
+        if (freq === '30m') return true; // Treating as every hour slot for now
+        if (freq === '2h') return hourIndex % 2 === 0;
+        if (freq === '4h') return hourIndex % 4 === 0;
+        if (freq === 'shift') return hourIndex === 0; // First slot only
+        return true;
+    };
+
     const findInspection = (stationId: string, hour: number) => {
         return scheduledInspections.find(i => {
             if (i.schedule?.work_station_id !== stationId) return false;
@@ -138,203 +198,213 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
     };
 
     return (
-        <div className="animate-fadeIn p-2 md:p-4">
+        <div className="animate-fadeIn p-4 md:p-6 bg-gray-50/50 min-h-screen">
             {/* Header */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition">
-                        <ArrowLeft className="w-5 h-5 text-gray-500" />
+                    <button onClick={onBack} className="p-2 -ml-2 hover:bg-white rounded-full transition text-gray-500 hover:shadow-sm">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <Clock className="w-7 h-7 text-blue-600" />
+                            <RefreshCw className="w-6 h-6 text-blue-600" />
                             Routine Monitor
                         </h1>
-                        <div className="flex items-center gap-2 text-gray-500 text-sm mt-1">
+                        <div className="flex items-center gap-2 text-gray-500 text-sm mt-1 font-medium">
                             <Calendar className="w-4 h-4" />
-                            <span>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span>{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="bg-slate-900 text-white px-4 py-2 rounded-lg font-mono text-xl font-bold shadow-lg">
-                        {currentTime.toLocaleTimeString('en-US', { hour12: true })}
+                <div className="flex items-center gap-3">
+                    <div className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-mono text-xl font-bold shadow-lg shadow-slate-200 tracking-wider">
+                        {currentTime.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </div>
 
-                    <button
-                        onClick={handleGenerateSchedule}
-                        disabled={isGenerating}
-                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition whitespace-nowrap hidden md:flex items-center gap-2 font-medium text-sm"
-                        title="Generate Schedule"
-                    >
-                        <Plus className="w-4 h-4" />
-                        {isGenerating ? 'Generating...' : 'Generate'}
+                    <button className="p-2.5 bg-green-50 text-green-600 rounded-xl border border-green-200 hover:bg-green-100 transition shadow-sm">
+                        <Play className="w-5 h-5 fill-current" />
                     </button>
 
                     <button
                         onClick={fetchData}
                         disabled={isLoading}
-                        className={`p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition ${isLoading ? 'animate-spin' : ''}`}
-                        title="Refresh"
+                        className={`p-2.5 bg-white text-gray-400 border border-gray-200 rounded-xl hover:text-gray-600 hover:bg-gray-50 transition shadow-sm ${isLoading ? 'animate-spin' : ''}`}
                     >
                         <RefreshCw className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
-            {/* Shift Tabs */}
-            <div className="flex flex-wrap items-center gap-2 mb-8 bg-gray-100 p-1.5 rounded-xl w-full md:w-fit">
-                {(['morning', 'afternoon', 'night'] as ShiftType[]).map((shift) => (
-                    <button
-                        key={shift}
-                        onClick={() => setActiveShift(shift)}
-                        className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeShift === shift
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'text-gray-600 hover:bg-white/50'
-                            }`}
-                    >
-                        {SHIFT_LABELS[shift]} <span className="opacity-75 text-xs ml-1 font-normal hidden sm:inline">{SHIFT_TIMES[shift]}</span>
-                    </button>
-                ))}
+            <div className="text-right text-xs text-gray-300 mb-4 font-medium">
+                Last refresh: {lastRefresh.toLocaleTimeString()}
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="bg-green-50 rounded-xl p-5 border border-green-100 shadow-sm relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <h3 className="text-3xl font-bold text-green-700">{stats.completed}</h3>
-                        <p className="text-sm font-medium text-green-600 mt-1">Completed</p>
-                    </div>
-                    <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 text-green-200 group-hover:scale-110 transition tablet:w-16 tablet:h-16" />
+            {/* Shift Tabs */}
+            <div className="flex flex-col md:flex-row gap-6 mb-8">
+                <div className="flex items-center bg-gray-200/50 p-1.5 rounded-xl flex-1 md:flex-none">
+                    {(['morning', 'afternoon', 'night'] as ShiftType[]).map((shift) => (
+                        <button
+                            key={shift}
+                            onClick={() => setActiveShift(shift)}
+                            className={`px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeShift === shift
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'
+                                }`}
+                        >
+                            {shift === 'morning' ? 'Shift A (Morning)' : shift === 'afternoon' ? 'Shift B (Afternoon)' : 'Shift C (Night)'}
+                            <span className={`block text-[10px] font-normal mt-0.5 ${activeShift === shift ? 'text-blue-200' : 'text-gray-400'}`}>
+                                {SHIFT_TIMES[shift]}
+                            </span>
+                        </button>
+                    ))}
                 </div>
 
-                <div className="bg-yellow-50 rounded-xl p-5 border border-yellow-100 shadow-sm relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <h3 className="text-3xl font-bold text-yellow-700">{stats.pending}</h3>
-                        <p className="text-sm font-medium text-yellow-600 mt-1">Pending Now</p>
+                {/* KPI Cards */}
+                <div className="flex-1 grid grid-cols-3 gap-4">
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-100 flex flex-col justify-center">
+                        <div className="text-3xl font-bold text-green-600 mb-1">{currentStats.completed}</div>
+                        <div className="text-xs font-bold text-green-600 uppercase tracking-wide opacity-80">Completed</div>
                     </div>
-                    <Timer className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 text-yellow-200 group-hover:scale-110 transition tablet:w-16 tablet:h-16" />
-                </div>
-
-                <div className="bg-red-50 rounded-xl p-5 border border-red-100 shadow-sm relative overflow-hidden group">
-                    <div className="relative z-10">
-                        <h3 className="text-3xl font-bold text-red-700">{stats.overdue + stats.missed}</h3>
-                        <p className="text-sm font-medium text-red-600 mt-1">Overdue / Missed</p>
+                    <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 flex flex-col justify-center">
+                        <div className="text-3xl font-bold text-amber-600 mb-1">{currentStats.pending}</div>
+                        <div className="text-xs font-bold text-amber-600 uppercase tracking-wide opacity-80">Pending Now</div>
                     </div>
-                    <AlertCircle className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 text-red-200 group-hover:scale-110 transition tablet:w-16 tablet:h-16" />
+                    <div className="bg-red-50 rounded-xl p-4 border border-red-100 flex flex-col justify-center">
+                        <div className="text-3xl font-bold text-red-600 mb-1">{currentStats.overdue}</div>
+                        <div className="text-xs font-bold text-red-600 uppercase tracking-wide opacity-80">Overdue</div>
+                    </div>
                 </div>
             </div>
 
             {/* Matrix View */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[800px]">
+                    <table className="w-full min-w-[1000px]">
                         <thead>
-                            <tr className="bg-slate-50 border-b border-gray-200 text-left">
-                                <th className="py-4 px-6 font-bold text-gray-500 text-xs uppercase tracking-wider sticky left-0 bg-slate-50 z-10 w-64 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <tr className="bg-white border-b border-gray-100">
+                                <th className="py-5 px-6 font-bold text-gray-400 text-xs uppercase tracking-wider text-left w-64">
                                     STATION
                                 </th>
-                                {SHIFT_HOURS[activeShift].map(hour => (
-                                    <th key={hour} className={`py-4 px-4 font-bold text-xs uppercase tracking-wider text-center w-24 ${currentTime.getHours() === hour ? 'bg-blue-50 text-blue-600' : 'text-gray-500'
-                                        }`}>
-                                        {getHourLabel(hour)}
-                                    </th>
-                                ))}
+                                {SHIFT_HOURS[activeShift].map(hour => {
+                                    const isCurrentHour = currentTime.getHours() === hour;
+                                    return (
+                                        <th key={hour} className={`py-5 px-4 font-bold text-xs tracking-wider text-center w-24 relative ${isCurrentHour ? 'bg-blue-50/50' : ''}`}>
+                                            {isCurrentHour && (
+                                                <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500"></div>
+                                            )}
+                                            <span className={isCurrentHour ? 'text-blue-600' : 'text-gray-500'}>
+                                                {getHourLabel(hour)}
+                                            </span>
+                                        </th>
+                                    );
+                                })}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {workStations.map((station) => (
-                                <tr key={station.id} className="hover:bg-gray-50/50 transition">
-                                    {/* Station Column */}
-                                    <td className="py-4 px-6 bg-white sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
-                                        <div className="flex items-center gap-3">
-                                            <div className="hidden md:flex w-10 h-10 rounded-lg bg-indigo-50 items-center justify-center text-indigo-600">
-                                                <Factory className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-gray-900">{station.name}</div>
-                                                <div className="text-xs text-slate-400">Freq: Every 1h</div>
-                                                {/* NOTE: Assuming 1h for UI, ideally from station config */}
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    {/* Time Slots */}
-                                    {SHIFT_HOURS[activeShift].map(hour => {
-                                        const inspection = findInspection(station.id, hour);
-                                        const nowHour = currentTime.getHours();
-                                        const isPast = activeShift === 'night'
-                                            ? (hour < 12 && nowHour >= 12) || (hour < nowHour && nowHour < 12) || (hour > 12 && nowHour > 12 && hour < nowHour)
-                                            : hour < nowHour;
-                                        const isCurrent = hour === nowHour;
-
-                                        return (
-                                            <td key={hour} className={`p-4 text-center ${isCurrent ? 'bg-blue-50/30' : ''}`}>
-                                                {inspection ? (
-                                                    // Inspection exists
-                                                    <div className="flex justify-center group relative">
-                                                        {inspection.status === 'completed' ? (
-                                                            <button className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition shadow-sm">
-                                                                <Check className="w-5 h-5" />
-                                                            </button>
-                                                        ) : inspection.status === 'missed' ? (
-                                                            <button className="w-10 h-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center hover:bg-red-200 transition shadow-sm animate-pulse">
-                                                                <AlertCircle className="w-5 h-5" />
-                                                            </button>
-                                                        ) : isOverdue(inspection.expected_time) ? (
-                                                            <button
-                                                                onClick={() => onStartInspection?.(station.id, station.name, inspection.id)}
-                                                                className="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition shadow-md animate-pulse"
-                                                                title="Overdue - Start Now"
-                                                            >
-                                                                <AlertCircle className="w-5 h-5" />
-                                                            </button>
-                                                        ) : (
-                                                            // Pending (Future or Current)
-                                                            <button
-                                                                onClick={() => onStartInspection?.(station.id, station.name, inspection.id)}
-                                                                className={`w-10 h-10 rounded-lg flex items-center justify-center transition shadow-sm ${isCurrent
-                                                                        ? 'bg-yellow-400 text-white hover:bg-yellow-500 ring-4 ring-yellow-100'
-                                                                        : 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
-                                                                    }`}
-                                                                title="Pending - Start"
-                                                            >
-                                                                <Clock className="w-5 h-5" />
-                                                            </button>
-                                                        )}
-
-                                                        {/* Tooltip */}
-                                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-20">
-                                                            {inspection.status === 'completed' ? `Completed by ${inspection.completed_by}` :
-                                                                inspection.status === 'pending' ? 'Scheduled' : 'Missed'}
-                                                        </div>
-                                                    </div>
+                        <tbody className="divide-y divide-gray-50">
+                            {workStations.map((station) => {
+                                const isLine = station.type === 'production_line' || (!station.type && station.name.includes('Line'));
+                                return (
+                                    <tr key={station.id} className="group hover:bg-slate-50/50 transition-colors">
+                                        {/* Station Column */}
+                                        <td className="py-4 px-6 bg-white group-hover:bg-slate-50/50 transition-colors border-r border-gray-50">
+                                            <div className="flex items-center gap-3">
+                                                {isLine ? (
+                                                    <Factory className="w-5 h-5 text-purple-500" />
                                                 ) : (
-                                                    // No inspection scheduled
-                                                    <div className="flex justify-center">
-                                                        <div className={`w-10 h-10 rounded-lg ${isPast ? 'bg-gray-100' : 'bg-gray-50 border border-gray-100 border-dashed'}`}></div>
-                                                    </div>
+                                                    <Wrench className="w-5 h-5 text-blue-500" />
                                                 )}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                            {workStations.length === 0 && (
-                                <tr>
-                                    <td colSpan={10} className="p-8 text-center text-gray-500">
-                                        No work stations configured.
-                                    </td>
-                                </tr>
-                            )}
+                                                <div>
+                                                    <div className="font-bold text-gray-900 text-sm">{station.name}</div>
+                                                    <div className="text-xs text-gray-400 mt-0.5">
+                                                        Every {station.frequency || '1h'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {/* Time Slots */}
+                                        {SHIFT_HOURS[activeShift].map((hour, index) => {
+                                            const nowHour = currentTime.getHours();
+                                            const currentShiftHours = SHIFT_HOURS[activeShift];
+                                            const currentHourIndex = currentShiftHours.indexOf(nowHour);
+                                            const slotHourIndex = index;
+
+                                            // Status logic logic
+                                            const isPastSlot = currentHourIndex !== -1 && slotHourIndex < currentHourIndex;
+                                            const isFutureSlot = currentHourIndex !== -1 && slotHourIndex > currentHourIndex;
+                                            const isCurrentSlot = nowHour === hour;
+
+                                            const showSlot = shouldShowSlot(station, index);
+                                            const inspection = findInspection(station.id, hour);
+
+                                            return (
+                                                <td key={hour} className={`p-3 text-center align-middle border-r border-gray-50/50 last:border-0 ${isCurrentSlot ? 'bg-blue-50/30' : ''}`}>
+                                                    {!showSlot ? (
+                                                        // Empty slot (frequency skip)
+                                                        <div className="w-12 h-12 mx-auto rounded-xl bg-gray-50 border border-gray-100 border-dashed"></div>
+                                                    ) : (
+                                                        // Active slot
+                                                        <div className="flex justify-center">
+                                                            {inspection && inspection.status === 'completed' ? (
+                                                                // Completed: Green
+                                                                <div className="w-10 h-10 rounded-lg bg-green-500 text-white flex items-center justify-center shadow-sm shadow-green-200 group/item relative cursor-default">
+                                                                    <Check className="w-5 h-5" strokeWidth={3} />
+                                                                    {/* Tooltip */}
+                                                                    <div className="absolute bottom-full mb-2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover/item:opacity-100 pointer-events-none whitespace-nowrap z-10">
+                                                                        Done: {new Date(inspection.completed_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    </div>
+                                                                </div>
+                                                            ) : isPastSlot ? (
+                                                                // Overdue: Red
+                                                                <button
+                                                                    onClick={() => onStartInspection?.(station.id, station.name, inspection?.id)}
+                                                                    className="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center shadow-md shadow-red-200 hover:bg-red-600 hover:scale-105 transition-all animate-pulse"
+                                                                >
+                                                                    <AlertTriangle className="w-5 h-5" strokeWidth={2.5} />
+                                                                </button>
+                                                            ) : (
+                                                                // Pending (Current or Future): Yellow/Amber
+                                                                // Screenshot shows yellow for current. Future might be gray or yellow? 
+                                                                // Let's make Current = Yellow, Future = Gray/Yellow outlines?
+                                                                // Screenshot implies pure pending tasks are yellow.
+                                                                <button
+                                                                    onClick={() => isCurrentSlot || isPastSlot ? onStartInspection?.(station.id, station.name, inspection?.id) : null}
+                                                                    className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isCurrentSlot
+                                                                            ? 'bg-amber-400 text-white shadow-md shadow-amber-200 hover:bg-amber-500 hover:scale-105'
+                                                                            : 'bg-gray-100 text-gray-400'
+                                                                        }`}
+                                                                >
+                                                                    <Clock className="w-5 h-5" strokeWidth={2.5} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div className="text-right text-xs text-gray-400 mt-2">
-                Last refreshed: {lastRefresh.toLocaleTimeString()}
+            {/* Legend / Info */}
+            <div className="flex justify-end gap-6 mt-6 text-sm text-gray-500 font-medium">
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-green-500"></div> Completed
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-amber-400"></div> Pending
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-red-500"></div> Overdue
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-gray-50 border border-gray-200 border-dashed"></div> No Schedule
+                </div>
             </div>
         </div>
     );

@@ -12,10 +12,11 @@ import {
     Wrench,
     Building2,
     Clock,
-    MoreHorizontal,
+    MapPin,
     BarChart3,
     Eye,
-    CalendarClock
+    CalendarClock,
+    LayoutGrid
 } from 'lucide-react';
 import { getWorkStations, saveWorkStation, deleteWorkStation } from '../services/scheduleService';
 
@@ -54,8 +55,8 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
     const stats = {
         total: workStations.length,
         active: workStations.filter(w => w.is_active).length,
-        lines: workStations.filter(w => w.name.toLowerCase().includes('line')).length,
-        singles: workStations.filter(w => !w.name.toLowerCase().includes('line')).length
+        lines: workStations.filter(w => w.type === 'production_line' || w.name.toLowerCase().includes('line')).length,
+        singles: workStations.filter(w => w.type === 'workstation' || (!w.name.toLowerCase().includes('line') && !w.type)).length
     };
 
     const handleCreateNew = () => {
@@ -64,14 +65,22 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
             name: '',
             code: '',
             description: '',
-            is_active: true
+            is_active: true,
+            type: 'production_line',
+            location: '',
+            frequency: '1h'
         };
         setEditForm(newStation);
         setIsEditing(true);
     };
 
     const handleEdit = (station: WorkStation) => {
-        setEditForm({ ...station });
+        setEditForm({
+            ...station,
+            type: station.type || (station.name.toLowerCase().includes('line') ? 'production_line' : 'workstation'),
+            frequency: station.frequency || '1h',
+            location: station.location || 'Building 1'
+        });
         setIsEditing(true);
     };
 
@@ -83,8 +92,14 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
     };
 
     const handleSave = async () => {
-        if (editForm && editForm.name && editForm.code) {
+        if (editForm && editForm.name) {
             const stationToSave = { ...editForm };
+
+            // Auto-generate code if missing
+            if (!stationToSave.code) {
+                stationToSave.code = stationToSave.name.toUpperCase().replace(/\s+/g, '-');
+            }
+
             if (!stationToSave.id) {
                 stationToSave.id = `ws-${Date.now()}`;
             }
@@ -105,74 +120,121 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
 
         return (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
-                <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full">
-                    <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all">
+                    {/* Header */}
+                    <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <Factory className="w-6 h-6 text-blue-600" />
-                            {editForm.id ? 'Edit Work Station' : 'New Station'}
+                            <LayoutGrid className="w-5 h-5 text-blue-600" />
+                            {editForm.id ? 'Edit Station' : 'New Station'}
                         </h2>
-                        <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-gray-700">
-                            <X className="w-6 h-6" />
+                        <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600 transition">
+                            <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="p-6 space-y-4">
+                    <div className="p-6 space-y-5">
+                        {/* Station Name */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Station Name</label>
+                            <label className="block text-sm font-bold text-gray-800 mb-1.5">
+                                Station Name <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={editForm.name}
                                 onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g. Line A"
+                                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder-gray-400 text-sm"
+                                placeholder="e.g., Line A or WS-01"
+                                autoFocus
                             />
                         </div>
 
+                        {/* Type Selection */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Station Code</label>
-                            <input
-                                type="text"
-                                value={editForm.code}
-                                onChange={e => setEditForm({ ...editForm, code: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g. WS-LN-A"
-                            />
+                            <label className="block text-sm font-bold text-gray-800 mb-2">Type</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, type: 'production_line' })}
+                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-bold text-sm transition-all border ${editForm.type === 'production_line'
+                                            ? 'bg-gray-100 text-gray-900 border-gray-200'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                        } ${
+                                        // Specific styling to match screenshot: Left one looks selected in screenshot design style?
+                                        // Actually screenshot shows 'Workstation' selected (Blue) and 'Production Line' unselected.
+                                        // I'll invert logic to match generic "Active = Blue"
+                                        editForm.type === 'production_line' ? '' : ''
+                                        }`}
+                                    style={editForm.type === 'production_line' ? { backgroundColor: '#f3f4f6', borderColor: 'transparent' } : {}}
+                                >
+                                    <Factory className="w-4 h-4" />
+                                    Production Line
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, type: 'workstation' })}
+                                    className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-bold text-sm transition-all border ${editForm.type === 'workstation'
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <Wrench className="w-4 h-4" />
+                                    Workstation
+                                </button>
+                            </div>
                         </div>
 
+                        {/* Location */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                            <textarea
-                                value={editForm.description || ''}
-                                onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                rows={3}
-                                placeholder="Optional description..."
-                            />
+                            <label className="block text-sm font-bold text-gray-800 mb-1.5">Location</label>
+                            <div className="relative">
+                                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={editForm.location || ''}
+                                    onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition placeholder-gray-400 text-sm"
+                                    placeholder="e.g., Building 1"
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                id="active_toggle"
-                                checked={editForm.is_active}
-                                onChange={e => setEditForm({ ...editForm, is_active: e.target.checked })}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <label htmlFor="active_toggle" className="text-sm font-medium text-gray-700">Station Active</label>
+                        {/* Inspection Frequency */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-800 mb-1.5">Inspection Frequency</label>
+                            <div className="relative">
+                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <select
+                                    value={editForm.frequency || '1h'}
+                                    onChange={e => setEditForm({ ...editForm, frequency: e.target.value })}
+                                    className="w-full pl-10 pr-8 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none transition text-sm font-medium text-gray-700"
+                                >
+                                    <option value="30m">Every 30 Minutes</option>
+                                    <option value="1h">Every 1 Hour</option>
+                                    <option value="2h">Every 2 Hours</option>
+                                    <option value="4h">Every 4 Hours</option>
+                                    <option value="shift">Once per Shift</option>
+                                </select>
+                                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end gap-3">
+                    {/* Footer */}
+                    <div className="px-6 py-4 bg-white border-t border-gray-100 flex justify-end gap-3 rounded-b-2xl">
                         <button
                             onClick={() => setIsEditing(false)}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                            className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-bold text-sm transition"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSave}
-                            disabled={!editForm.name || !editForm.code}
-                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!editForm.name}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md hover:shadow-lg transition transform active:scale-95 disabled:opacity-50 disabled:transform-none"
                         >
                             <Save className="w-4 h-4" />
                             Save
@@ -185,7 +247,6 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
 
     return (
         <div className="animate-fadeIn p-4 md:p-8 max-w-7xl mx-auto">
-
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
@@ -266,7 +327,7 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                         {isLoading ? (
                             <div className="col-span-full py-20 flex justify-center text-gray-400">Loading...</div>
                         ) : filteredStations.map((station) => {
-                            const isLine = station.name.toLowerCase().includes('line');
+                            const isLine = station.type === 'production_line' || (!station.type && station.name.toLowerCase().includes('line'));
 
                             return (
                                 <div key={station.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all group">
@@ -286,7 +347,6 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                                             <div
                                                 className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors duration-200 ease-in-out ${station.is_active ? 'bg-green-500' : 'bg-gray-200'}`}
                                                 onClick={() => {
-                                                    // Quick toggle
                                                     saveWorkStation({ ...station, is_active: !station.is_active });
                                                     loadWorkStations();
                                                 }}
@@ -297,12 +357,18 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
 
                                         <div className="space-y-3 mt-4">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <Building2 className="w-4 h-4 text-gray-400" />
-                                                <span>Building {Math.floor(Math.random() * 3) + 1}</span>
+                                                <MapPin className="w-4 h-4 text-gray-400" />
+                                                <span>{station.location || 'Building 1'}</span>
                                             </div>
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <Clock className="w-4 h-4 text-gray-400" />
-                                                <span>Every {isLine ? '1 hour' : '2 hours'}</span>
+                                                <span>{
+                                                    station.frequency === '30m' ? 'Every 30 Minutes' :
+                                                        station.frequency === '2h' ? 'Every 2 Hours' :
+                                                            station.frequency === '4h' ? 'Every 4 Hours' :
+                                                                station.frequency === 'shift' ? 'Once per Shift' :
+                                                                    'Every 1 hour'
+                                                }</span>
                                             </div>
                                         </div>
                                     </div>
