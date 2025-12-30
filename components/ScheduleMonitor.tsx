@@ -14,9 +14,9 @@ import {
     AlertTriangle, // Changed from AlertCircle to match screenshot triangle style
     RefreshCw,
     Factory,
-    Play,
+    Play as PlayIcon,
     ArrowLeft,
-    Plus,
+    Plus as PlusIcon,
     Wrench,
     MoreHorizontal
 } from 'lucide-react';
@@ -223,7 +223,7 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
                     </div>
 
                     <button className="p-2.5 bg-green-50 text-green-600 rounded-xl border border-green-200 hover:bg-green-100 transition shadow-sm">
-                        <Play className="w-5 h-5 fill-current" />
+                        <PlayIcon className="w-5 h-5 fill-current" />
                     </button>
 
                     <button
@@ -371,8 +371,8 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
                                                                 <button
                                                                     onClick={() => isCurrentSlot || isPastSlot ? onStartInspection?.(station.id, station.name, inspection?.id) : null}
                                                                     className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isCurrentSlot
-                                                                            ? 'bg-amber-400 text-white shadow-md shadow-amber-200 hover:bg-amber-500 hover:scale-105'
-                                                                            : 'bg-gray-100 text-gray-400'
+                                                                        ? 'bg-amber-400 text-white shadow-md shadow-amber-200 hover:bg-amber-500 hover:scale-105'
+                                                                        : 'bg-gray-100 text-gray-400'
                                                                         }`}
                                                                 >
                                                                     <Clock className="w-5 h-5" strokeWidth={2.5} />

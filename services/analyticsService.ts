@@ -18,11 +18,7 @@ export interface AnalyticsSummary {
 }
 
 // Pricing Constants (per 1M tokens) - Estimated
-const PRICING = {
-    'gemini-2.0-flash-lite': { input: 0.075, output: 0.30 }, // $0.075 / 1M input
-    'gemini-2.5-flash': { input: 0.10, output: 0.40 },       // $0.10 / 1M input
-    'default': { input: 0.10, output: 0.40 }
-};
+
 
 export const analyticsService = {
 
@@ -50,6 +46,12 @@ export const analyticsService = {
         }
 
         // 2. API Usage
+        const PRICING = {
+            'gemini-2.0-flash-lite': { input: 0.075, output: 0.30 }, // $0.075 / 1M input
+            'gemini-2.5-flash': { input: 0.10, output: 0.40 },       // $0.10 / 1M input
+            'default': { input: 0.10, output: 0.40 }
+        };
+
         let dailyUsage: DailyUsage[] = [];
 
         if (isSupabaseConfigured() && supabase) {

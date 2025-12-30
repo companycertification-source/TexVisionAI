@@ -23,7 +23,9 @@ import {
     Database,
     DollarSign,
     BarChart3,
-    TrendingUp
+    TrendingUp,
+    Globe,
+    Save
 } from 'lucide-react';
 import {
     BarChart,
@@ -48,7 +50,7 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     const { isAdmin, role: currentUserRole } = useRole();
-    const [activeTab, setActiveTab] = useState<'users' | 'analytics'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'analytics' | 'settings'>('users');
 
     // Users State
     const [users, setUsers] = useState<UserRoleRecord[]>([]);
@@ -62,6 +64,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
     // Analytics State
     const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
     const [isAnalyticsLoading, setIsAnalyticsLoading] = useState(false);
+
+    // Settings State
+    const [settings, setSettings] = useState({
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        dateFormat: 'MM/DD/YYYY',
+        currency: 'USD'
+    });
+    const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+
+    useEffect(() => {
+        const stored = localStorage.getItem('texvision_settings');
+        if (stored) {
+            setSettings(JSON.parse(stored));
+        }
+    }, []);
+
+    const handleSaveSettings = () => {
+        setIsSettingsSaving(true);
+        localStorage.setItem('texvision_settings', JSON.stringify(settings));
+        setTimeout(() => setIsSettingsSaving(false), 800);
+    };
 
     const fetchUsers = async () => {
         setIsUsersLoading(true);
@@ -116,14 +139,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         user.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const formatBytes = (bytes: number, decimals = 2) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    };
+
+
+    // Using imported formatBytes from analyticsService
 
     if (!isAdmin) {
         return (
@@ -183,6 +201,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                     >
                         <BarChart3 className="w-4 h-4" />
                         Resource Monitor
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg text-sm font-medium transition-colors ${activeTab === 'settings'
+                            ? 'bg-white text-slate-900'
+                            : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            }`}
+                    >
+                        <Globe className="w-4 h-4" />
+                        Regional Settings
                     </button>
                 </div>
             </div>
@@ -480,6 +508,95 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
                             </div>
                         )}
+                    </div>
+                )}
+                {/* --- SETTINGS TAB --- */}
+                {activeTab === 'settings' && (
+                    <div className="flex-grow overflow-y-auto p-6 animate-fadeIn">
+                        <div className="max-w-2xl mx-auto space-y-6">
+
+                            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Globe className="w-5 h-5 text-blue-600" />
+                                    Regional Settings
+                                </h3>
+
+                                <div className="space-y-4">
+                                    {/* Time Zone */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Time Zone</label>
+                                        <select
+                                            value={settings.timeZone}
+                                            onChange={(e) => setSettings({ ...settings, timeZone: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value={Intl.DateTimeFormat().resolvedOptions().timeZone}>System Default ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
+                                            <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                            <option value="America/New_York">New York (EST/EDT)</option>
+                                            <option value="Europe/London">London (GMT/BST)</option>
+                                            <option value="Asia/Dubai">Dubai (GST)</option>
+                                            <option value="Asia/Singapore">Singapore (SGT)</option>
+                                            <option value="Asia/Kolkata">Kolkata (IST)</option>
+                                            <option value="Australia/Sydney">Sydney (AEST/AEDT)</option>
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">Affects how timestamps are displayed in reports.</p>
+                                    </div>
+
+                                    {/* Date Format */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+                                        <select
+                                            value={settings.dateFormat}
+                                            onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="MM/DD/YYYY">MM/DD/YYYY (US)</option>
+                                            <option value="DD/MM/YYYY">DD/MM/YYYY (UK/EU)</option>
+                                            <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Currency */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                        <select
+                                            value={settings.currency}
+                                            onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        >
+                                            <option value="USD">USD ($) - US Dollar</option>
+                                            <option value="EUR">EUR (€) - Euro</option>
+                                            <option value="GBP">GBP (£) - British Pound</option>
+                                            <option value="INR">INR (₹) - Indian Rupee</option>
+                                            <option value="AED">AED (د.إ) - UAE Dirham</option>
+                                            <option value="CNY">CNY (¥) - Chinese Yuan</option>
+                                        </select>
+                                        <p className="text-xs text-gray-500 mt-1">Used for cost estimation and financial reports.</p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end">
+                                    <button
+                                        onClick={handleSaveSettings}
+                                        disabled={isSettingsSaving}
+                                        className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md disabled:bg-blue-300"
+                                    >
+                                        {isSettingsSaving ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save className="w-4 h-4" />
+                                                Save Settings
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 )}
             </div>
