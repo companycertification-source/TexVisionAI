@@ -44,8 +44,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon, title, desc }) => (
 const App: React.FC = () => {
   // Auth & Role State
   const { user, isAuthenticated, logout: authLogout } = useAuth();
-  const { isAdmin, role, isLoading: isRoleLoading } = useRole();
-  const isManager = user?.role === 'manager' || isAdmin;
+  const { isAdmin, role, isLoading: isRoleLoading, isManager: roleIsManager } = useRole();
+  // Admins have access to all modules, managers have access to management modules
+  const isManager = isAdmin || roleIsManager || role === 'manager';
 
   // Navigation State
   const { step, login, logout, goHome, goToHistory, goToSuppliers, goToItems, goToInspectors, goToAdmin, goToSchedule, goToWorkStations, goToReport, goBack } = useAppNavigation();
