@@ -264,7 +264,10 @@ const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
                     <button className="p-2.5 rounded-lg bg-pink-50 text-pink-600 border border-pink-100 font-bold flex items-center gap-2 transition hover:bg-pink-100">
                         <Eye className="w-5 h-5" />
                     </button>
-                    <button className="p-2.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold flex items-center gap-2 transition hover:bg-indigo-100">
+                    <button
+                        onClick={() => setActiveTab('analytics')}
+                        className={`p-2.5 rounded-lg border font-bold flex items-center gap-2 transition ${activeTab === 'analytics' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-100'}`}
+                    >
                         <BarChart3 className="w-5 h-5" />
                     </button>
                     <button
