@@ -71,6 +71,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         dateFormat: 'MM/DD/YYYY',
         currency: 'USD'
     });
+    const [shiftTimes, setShiftTimes] = useState({
+        morning: { start: '06:00', end: '14:00' },
+        afternoon: { start: '14:00', end: '22:00' },
+        night: { start: '22:00', end: '06:00' }
+    });
     const [isSettingsSaving, setIsSettingsSaving] = useState(false);
 
     useEffect(() => {
@@ -78,11 +83,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
         if (stored) {
             setSettings(JSON.parse(stored));
         }
+        const storedShifts = localStorage.getItem('texvision_shift_times');
+        if (storedShifts) {
+            setShiftTimes(JSON.parse(storedShifts));
+        }
     }, []);
 
     const handleSaveSettings = () => {
         setIsSettingsSaving(true);
         localStorage.setItem('texvision_settings', JSON.stringify(settings));
+        localStorage.setItem('texvision_shift_times', JSON.stringify(shiftTimes));
         setTimeout(() => setIsSettingsSaving(false), 800);
     };
 
@@ -572,6 +582,128 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
                                             <option value="CNY">CNY (¥) - Chinese Yuan</option>
                                         </select>
                                         <p className="text-xs text-gray-500 mt-1">Used for cost estimation and financial reports.</p>
+                                    </div>
+                                </div>
+
+                                {/* Shift Configuration */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Shift Timings
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mb-6">Configure work shift hours for in-process inspections</p>
+
+                                    <div className="space-y-4">
+                                        {/* Morning Shift */}
+                                        <div className="border border-gray-200 rounded-lg p-4 bg-amber-50/30">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                                                    Morning Shift
+                                                </label>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">Start Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.morning.start}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            morning: { ...shiftTimes.morning, start: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">End Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.morning.end}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            morning: { ...shiftTimes.morning, end: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Afternoon Shift */}
+                                        <div className="border border-gray-200 rounded-lg p-4 bg-blue-50/30">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                                                    Afternoon Shift
+                                                </label>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">Start Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.afternoon.start}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            afternoon: { ...shiftTimes.afternoon, start: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">End Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.afternoon.end}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            afternoon: { ...shiftTimes.afternoon, end: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Night Shift */}
+                                        <div className="border border-gray-200 rounded-lg p-4 bg-indigo-50/30">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-indigo-600"></div>
+                                                    Night Shift
+                                                </label>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">Start Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.night.start}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            night: { ...shiftTimes.night, start: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">End Time</label>
+                                                    <input
+                                                        type="time"
+                                                        value={shiftTimes.night.end}
+                                                        onChange={(e) => setShiftTimes({
+                                                            ...shiftTimes,
+                                                            night: { ...shiftTimes.night, end: e.target.value }
+                                                        })}
+                                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">Note: Night shift can span across midnight</p>
+                                        </div>
                                     </div>
                                 </div>
 
