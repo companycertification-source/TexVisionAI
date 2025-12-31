@@ -24,7 +24,7 @@ interface WorkStationCenterProps {
     onBack: () => void;
 }
 
-export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
+const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState<'stations' | 'shifts'>('stations');
     const [workStations, setWorkStations] = useState<WorkStation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -156,8 +156,8 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                                     type="button"
                                     onClick={() => setEditForm({ ...editForm, type: 'production_line' })}
                                     className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-bold text-sm transition-all border ${editForm.type === 'production_line'
-                                            ? 'bg-gray-100 text-gray-900 border-gray-200'
-                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                        ? 'bg-gray-100 text-gray-900 border-gray-200'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
                                         } ${
                                         // Specific styling to match screenshot: Left one looks selected in screenshot design style?
                                         // Actually screenshot shows 'Workstation' selected (Blue) and 'Production Line' unselected.
@@ -173,8 +173,8 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                                     type="button"
                                     onClick={() => setEditForm({ ...editForm, type: 'workstation' })}
                                     className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-bold text-sm transition-all border ${editForm.type === 'workstation'
-                                            ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
                                         }`}
                                 >
                                     <Wrench className="w-4 h-4" />
@@ -281,8 +281,8 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                 <button
                     onClick={() => setActiveTab('stations')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm border ${activeTab === 'stations'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                         }`}
                 >
                     <Factory className="w-5 h-5" />
@@ -291,8 +291,8 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
                 <button
                     onClick={() => setActiveTab('shifts')}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm border ${activeTab === 'shifts'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                         }`}
                 >
                     <CalendarClock className="w-5 h-5" />
@@ -408,3 +408,5 @@ export const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) 
         </div>
     );
 };
+
+export default WorkStationCenter;

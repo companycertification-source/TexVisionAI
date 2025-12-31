@@ -8,8 +8,9 @@ import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
 import { AdminPanel } from './components/AdminPanel';
 // Lazy load ScheduleMonitor to prevent initialization order issues
-const ScheduleMonitor = lazy(() => import('./components/ScheduleMonitor').then(m => ({ default: m.ScheduleMonitor })));
-const WorkStationCenter = lazy(() => import('./components/WorkStationCenter').then(m => ({ default: m.WorkStationCenter })));
+// Lazy load ScheduleMonitor and WorkStationCenter
+const ScheduleMonitor = lazy(() => import('./components/ScheduleMonitor'));
+const WorkStationCenter = lazy(() => import('./components/WorkStationCenter'));
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';

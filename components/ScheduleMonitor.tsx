@@ -11,7 +11,7 @@ import {
     Calendar,
     Clock,
     Check,
-    AlertTriangle, // Changed from AlertCircle to match screenshot triangle style
+    AlertTriangle,
     RefreshCw,
     Factory,
     Play as PlayIcon,
@@ -61,7 +61,7 @@ const SHIFT_TIMES: Record<ShiftType, string> = {
     night: '(22:00 - 06:00)'
 };
 
-export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
+const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
     onBack,
     onStartInspection,
     onConfigureSchedules
@@ -87,7 +87,6 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
             ]);
             setScheduledInspections(inspections);
             // Sort stations: Production Lines first? Or Alphabetical?
-            // Let's sort simply by name for now, or ensure Lines are top.
             const sortedStations = [...stations].sort((a, b) => {
                 const aIsLine = a.type === 'production_line' || a.name.includes('Line');
                 const bIsLine = b.type === 'production_line' || b.name.includes('Line');
@@ -130,17 +129,34 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
         }
     };
 
-    // --- Statistics ---
-    // We calculate these based on the VIEW, not just the raw data, for consistency
-    const stats = {
-        total: 0,
-        completed: 0,
-        pending: 0,
-        overdue: 0
+    // --- Render Helpers (Moved UP to avoid TDZ) ---
+
+    // Pure helper
+    const getHourLabel = (hour: number) => {
+        return `${hour.toString().padStart(2, '0')}:00`;
     };
 
-    // We'll calculate stats during render or in a useMemo to match the visual grid exactly
-    // Simpler: iterate logical slots
+    // Helper to determine if a slot should be active based on frequency
+    const shouldShowSlot = (station: WorkStation, hourIndex: number) => {
+        const freq = station.frequency || '1h';
+        if (freq === '1h') return true;
+        if (freq === '30m') return true;
+        if (freq === '2h') return hourIndex % 2 === 0;
+        if (freq === '4h') return hourIndex % 4 === 0;
+        if (freq === 'shift') return hourIndex === 0;
+        return true;
+    };
+
+    // State-dependent helper
+    const findInspection = (stationId: string, hour: number) => {
+        return scheduledInspections.find(i => {
+            if (i.schedule?.work_station_id !== stationId) return false;
+            const d = new Date(i.expected_time);
+            return d.getHours() === hour;
+        });
+    };
+
+    // --- Statistics (Moved DOWN because it uses helpers) ---
     const calculateStats = () => {
         let completed = 0;
         let pending = 0;
@@ -150,25 +166,13 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
 
         workStations.forEach(station => {
             currentHours.forEach((hour, index) => {
-                if (shouldShowSlot(station, index)) {
-                    const inspection = findInspection(station.id, hour);
+                if (shouldShowSlot(station, index)) { // Now safe!
+                    const inspection = findInspection(station.id, hour); // Now safe!
                     if (inspection && inspection.status === 'completed') {
                         completed++;
                     } else {
-                        // Not completed
-                        // Check if past or present
                         const isPast = index < currentHourIndex;
                         const isNow = index === currentHourIndex;
-
-                        // Special case: if we are in a different shift than current time, logic differs
-                        // Assume monitoring active shift.
-
-                        if (activeShift !== getCurrentShift() && activeShift !== 'night') {
-                            // Viewing past shift?
-                            // Simple logic: if shift is "morning" and now is "afternoon", all uncompleted are overdue?
-                            // For simplicity, we stick to "Is Past Time Slot" logic.
-                        }
-
                         if (isPast) {
                             overdue++;
                         } else {
@@ -182,31 +186,6 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
     };
 
     const currentStats = calculateStats();
-
-    // --- Render Helpers ---
-
-    const getHourLabel = (hour: number) => {
-        return `${hour.toString().padStart(2, '0')}:00`;
-    };
-
-    // Helper to determine if a slot should be active based on frequency
-    const shouldShowSlot = (station: WorkStation, hourIndex: number) => {
-        const freq = station.frequency || '1h';
-        if (freq === '1h') return true;
-        if (freq === '30m') return true; // Treating as every hour slot for now
-        if (freq === '2h') return hourIndex % 2 === 0;
-        if (freq === '4h') return hourIndex % 4 === 0;
-        if (freq === 'shift') return hourIndex === 0; // First slot only
-        return true;
-    };
-
-    const findInspection = (stationId: string, hour: number) => {
-        return scheduledInspections.find(i => {
-            if (i.schedule?.work_station_id !== stationId) return false;
-            const d = new Date(i.expected_time);
-            return d.getHours() === hour;
-        });
-    };
 
     return (
         <div className="animate-fadeIn p-4 md:p-6 bg-gray-50/50 min-h-screen">
@@ -376,9 +355,6 @@ export const ScheduleMonitor: React.FC<ScheduleMonitorProps> = ({
                                                                 </button>
                                                             ) : (
                                                                 // Pending (Current or Future): Yellow/Amber
-                                                                // Screenshot shows yellow for current. Future might be gray or yellow? 
-                                                                // Let's make Current = Yellow, Future = Gray/Yellow outlines?
-                                                                // Screenshot implies pure pending tasks are yellow.
                                                                 <button
                                                                     onClick={() => isCurrentSlot || isPastSlot ? onStartInspection?.(station.id, station.name, inspection?.id) : null}
                                                                     className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isCurrentSlot
