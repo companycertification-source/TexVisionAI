@@ -14,6 +14,7 @@ import {
     createDefaultRole
 } from '../services/roleService';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
+import { useAuth } from './AuthContext';
 
 interface RoleContextType {
     role: UserRole | null;
@@ -30,12 +31,16 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
     const [role, setRole] = useState<UserRole | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchRole = useCallback(async (providedId?: string, providedEmail?: string) => {
         if (!isSupabaseConfigured()) {
-            setRole('viewer'); // Default for demo mode
+            // In demo mode, use the role from AuthContext user object
+            const demoRole = user?.role as UserRole || 'viewer';
+            console.log('[RoleContext] Demo mode - using role from AuthContext:', demoRole);
+            setRole(demoRole);
             setIsLoading(false);
             return;
         }
@@ -65,7 +70,7 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [user]);
 
     // Listen for auth state changes
     useEffect(() => {
