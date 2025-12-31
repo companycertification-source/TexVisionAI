@@ -89,17 +89,33 @@ create index if not exists idx_suppliers_code on suppliers(code);
 create table if not exists inspections (
   id uuid default uuid_generate_v4() primary key,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()),
   supplier_name text,
-  supplier_id uuid references suppliers(id),
   po_number text,
   inspector_name text,
-  user_id uuid,
-  status text default 'completed' check (status in ('draft', 'pending_review', 'completed', 'approved', 'rejected')),
-  approved_by uuid,
-  approved_at timestamp with time zone,
   report_data jsonb not null
 );
+
+-- Add new columns to existing table if they don't exist
+alter table inspections add column if not exists updated_at timestamp with time zone default timezone('utc'::text, now());
+alter table inspections add column if not exists supplier_id uuid;
+alter table inspections add column if not exists user_id uuid;
+alter table inspections add column if not exists status text default 'completed';
+alter table inspections add column if not exists approved_by uuid;
+alter table inspections add column if not exists approved_at timestamp with time zone;
+
+-- Add constraint if not exists (wrap in DO block to handle existing constraint)
+do $$ begin
+  alter table inspections add constraint inspections_status_check 
+    check (status in ('draft', 'pending_review', 'completed', 'approved', 'rejected'));
+exception when duplicate_object then null;
+end $$;
+
+-- Add foreign key if not exists
+do $$ begin
+  alter table inspections add constraint inspections_supplier_id_fkey 
+    foreign key (supplier_id) references suppliers(id);
+exception when duplicate_object then null;
+end $$;
 
 alter table inspections enable row level security;
 
@@ -126,26 +142,42 @@ create index if not exists idx_inspections_supplier on inspections(supplier_id);
 create table if not exists items (
   id text primary key,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()),
   name text not null,
   code text,
   category text,
-  item_type text check (item_type in ('buy', 'sell')),
   uom text,
-  preferred_supplier text,
-  supplier_id uuid references suppliers(id),
   description text,
   specifications text,
   quality_checkpoints jsonb,
   reference_image_url text,
-  reference_image_front_url text,
-  reference_image_back_url text,
-  standard_images jsonb,
-  aql_config jsonb,
-  dimensions text,
-  is_active boolean default true,
-  created_by uuid
+  aql_config jsonb
 );
+
+-- Add new columns to existing table if they don't exist
+alter table items add column if not exists updated_at timestamp with time zone default timezone('utc'::text, now());
+alter table items add column if not exists item_type text default 'sell';
+alter table items add column if not exists preferred_supplier text;
+alter table items add column if not exists supplier_id uuid;
+alter table items add column if not exists reference_image_front_url text;
+alter table items add column if not exists reference_image_back_url text;
+alter table items add column if not exists standard_images jsonb;
+alter table items add column if not exists dimensions text;
+alter table items add column if not exists is_active boolean default true;
+alter table items add column if not exists created_by uuid;
+
+-- Add constraint if not exists
+do $$ begin
+  alter table items add constraint items_item_type_check 
+    check (item_type in ('buy', 'sell'));
+exception when duplicate_object then null;
+end $$;
+
+-- Add foreign key if not exists
+do $$ begin
+  alter table items add constraint items_supplier_id_fkey 
+    foreign key (supplier_id) references suppliers(id);
+exception when duplicate_object then null;
+end $$;
 
 alter table items enable row level security;
 
