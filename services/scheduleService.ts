@@ -372,3 +372,80 @@ export function getCurrentShift(): 'morning' | 'afternoon' | 'night' {
 export function isOverdue(expectedTime: string): boolean {
     return new Date(expectedTime) < new Date();
 }
+
+/**
+ * Get analytics data for workstations and shifts
+ */
+export async function getWorkStationAnalytics(startDate: string, endDate: string) {
+    try {
+        if (isDemoMode()) {
+            // Generate mock analytics based on mock data
+            // We'll create a synthetic distribution for demo purposes
+            const stations = await getMockWorkStations();
+            const data = stations.map(station => ({
+                stationId: station.id,
+                stationName: station.name,
+                total: Math.floor(Math.random() * 50) + 20,
+                completed: Math.floor(Math.random() * 40) + 10,
+                missed: Math.floor(Math.random() * 5),
+                shifts: {
+                    morning: Math.floor(Math.random() * 20) + 5,
+                    afternoon: Math.floor(Math.random() * 20) + 5,
+                    night: Math.floor(Math.random() * 10) + 2
+                }
+            }));
+            return data;
+        }
+
+        const client = ensureSupabase();
+
+        // This is a simplified query. In a real app, you might use RPC or more complex joins.
+        // For now, we fetch scheduled inspections in range and aggregate in JS.
+        const { data: inspections, error } = await client
+            .from('scheduled_inspections')
+            .select(`
+                *,
+                schedule:inspection_schedules(
+                    work_station:work_stations(id, name),
+                    shift
+                )
+            `)
+            .gte('shift_date', startDate)
+            .lte('shift_date', endDate);
+
+        if (error) throw error;
+
+        // Aggregate data
+        const stationMap = new Map<string, any>();
+
+        inspections?.forEach((ins: any) => {
+            const stationId = ins.schedule?.work_station?.id;
+            const stationName = ins.schedule?.work_station?.name;
+            const shift = ins.schedule?.shift;
+
+            if (!stationId) return;
+
+            if (!stationMap.has(stationId)) {
+                stationMap.set(stationId, {
+                    stationId,
+                    stationName,
+                    total: 0,
+                    completed: 0,
+                    missed: 0,
+                    shifts: { morning: 0, afternoon: 0, night: 0 }
+                });
+            }
+
+            const stat = stationMap.get(stationId);
+            stat.total++;
+            if (ins.status === 'completed') stat.completed++;
+            if (ins.status === 'missed') stat.missed++;
+            if (shift) stat.shifts[shift]++;
+        });
+
+        return Array.from(stationMap.values());
+    } catch (error) {
+        console.error('[scheduleService] getWorkStationAnalytics error:', error);
+        return [];
+    }
+}

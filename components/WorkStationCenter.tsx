@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { WorkStation } from '../types';
+import WorkStationAnalytics from './WorkStationAnalytics';
 import {
     Plus,
     Edit2,
@@ -25,7 +26,7 @@ interface WorkStationCenterProps {
 }
 
 const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
-    const [activeTab, setActiveTab] = useState<'stations' | 'shifts'>('stations');
+    const [activeTab, setActiveTab] = useState<'stations' | 'shifts' | 'analytics'>('stations');
     const [workStations, setWorkStations] = useState<WorkStation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -298,6 +299,16 @@ const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
                     <CalendarClock className="w-5 h-5" />
                     Shifts (3)
                 </button>
+                <button
+                    onClick={() => setActiveTab('analytics')}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm border ${activeTab === 'analytics'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                        }`}
+                >
+                    <BarChart3 className="w-5 h-5" />
+                    Analytics
+                </button>
             </div>
 
             {activeTab === 'stations' && (
@@ -395,17 +406,25 @@ const WorkStationCenter: React.FC<WorkStationCenterProps> = ({ onBack }) => {
                 </>
             )}
 
-            {activeTab === 'shifts' && (
-                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-                    <CalendarClock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-bold text-gray-900">Shift Configuration</h3>
-                    <p className="mt-2">Morning (06:00 - 14:00) • Afternoon (14:00 - 22:00) • Night (22:00 - 06:00)</p>
-                    <p className="text-sm text-gray-400 mt-1">Global shift settings can be configured in admin panel.</p>
-                </div>
-            )}
+            {
+                activeTab === 'shifts' && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+                        <CalendarClock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                        <h3 className="text-lg font-bold text-gray-900">Shift Configuration</h3>
+                        <p className="mt-2">Morning (06:00 - 14:00) • Afternoon (14:00 - 22:00) • Night (22:00 - 06:00)</p>
+                        <p className="text-sm text-gray-400 mt-1">Global shift settings can be configured in admin panel.</p>
+                    </div>
+                )
+            }
+
+            {
+                activeTab === 'analytics' && (
+                    <WorkStationAnalytics />
+                )
+            }
 
             {renderEditModal()}
-        </div>
+        </div >
     );
 };
 
