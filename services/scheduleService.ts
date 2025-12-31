@@ -8,8 +8,8 @@
 import { supabase } from './supabaseClient';
 import { WorkStation, InspectionSchedule, ScheduledInspection } from '../types';
 import {
-    MOCK_WORK_STATIONS,
-    MOCK_INSPECTION_SCHEDULES,
+    getMockWorkStations,
+    getMockInspectionSchedules,
     getMockScheduledInspections
 } from './mockScheduleData';
 
@@ -43,7 +43,7 @@ export async function getWorkStations(): Promise<WorkStation[]> {
     try {
         // Return mock data if in demo mode
         if (isDemoMode()) {
-            return Promise.resolve(MOCK_WORK_STATIONS);
+            return Promise.resolve(getMockWorkStations());
         }
 
         const client = ensureSupabase();
@@ -126,9 +126,10 @@ export async function getSchedules(workStationId?: string): Promise<InspectionSc
     try {
         // Return mock data if in demo mode
         if (isDemoMode()) {
+            const allSchedules = getMockInspectionSchedules();
             const schedules = workStationId
-                ? MOCK_INSPECTION_SCHEDULES.filter(s => s.work_station_id === workStationId)
-                : MOCK_INSPECTION_SCHEDULES;
+                ? allSchedules.filter(s => s.work_station_id === workStationId)
+                : allSchedules;
             return Promise.resolve(schedules);
         }
 
