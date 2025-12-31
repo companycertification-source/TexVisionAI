@@ -23,10 +23,7 @@ import {
 import {
     getScheduledInspections,
     getWorkStations,
-    generateDailySchedule,
-    getCurrentShift,
-    isOverdue, // We might override this with local visual logic
-    SHIFT_LABELS
+    generateDailySchedule
 } from '../services/scheduleService';
 import { ScheduledInspection, WorkStation } from '../types';
 
@@ -37,6 +34,20 @@ interface ScheduleMonitorProps {
 }
 
 type ShiftType = 'morning' | 'afternoon' | 'night';
+
+// Helper to get current shift based on time - Inlined to avoid circular dependency
+const getCurrentShift = (): ShiftType => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 14) return 'morning';
+    if (hour >= 14 && hour < 22) return 'afternoon';
+    return 'night';
+};
+
+const SHIFT_LABELS = {
+    morning: 'Morning (6AM - 2PM)',
+    afternoon: 'Afternoon (2PM - 10PM)',
+    night: 'Night (10PM - 6AM)'
+};
 
 const SHIFT_HOURS: Record<ShiftType, number[]> = {
     morning: [6, 7, 8, 9, 10, 11, 12, 13],

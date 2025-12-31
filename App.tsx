@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { InspectionForm } from './components/InspectionForm';
 import { ReportView } from './components/ReportView';
 import { LoginView } from './components/LoginView';
@@ -7,8 +7,9 @@ import { SupplierView } from './components/SupplierView';
 import { ItemCenter } from './components/ItemCenter';
 import { InspectorView } from './components/InspectorView';
 import { AdminPanel } from './components/AdminPanel';
-import { ScheduleMonitor } from './components/ScheduleMonitor';
-import { WorkStationCenter } from './components/WorkStationCenter';
+// Lazy load ScheduleMonitor to prevent initialization order issues
+const ScheduleMonitor = lazy(() => import('./components/ScheduleMonitor').then(m => ({ default: m.ScheduleMonitor })));
+const WorkStationCenter = lazy(() => import('./components/WorkStationCenter').then(m => ({ default: m.WorkStationCenter })));
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAuth } from './contexts/AuthContext';
 import { useRole } from './contexts/RoleContext';
@@ -352,13 +353,17 @@ const App: React.FC = () => {
 
         {isAuthenticated && step === 'schedule' && isManager && (
           <ErrorBoundary>
-            <ScheduleMonitor onBack={handleManualReset} />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>}>
+              <ScheduleMonitor onBack={handleManualReset} />
+            </Suspense>
           </ErrorBoundary>
         )}
 
         {isAuthenticated && step === 'workstations' && isManager && (
           <ErrorBoundary>
-            <WorkStationCenter onBack={handleManualReset} />
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div></div>}>
+              <WorkStationCenter onBack={handleManualReset} />
+            </Suspense>
           </ErrorBoundary>
         )}
 
