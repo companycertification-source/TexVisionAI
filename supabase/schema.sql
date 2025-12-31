@@ -1,5 +1,6 @@
--- TexVision AI - Comprehensive Supabase Schema
--- Version 2.0 - Includes user management, suppliers, audit logs, API tracking, quotas
+-- TexVision AI - Supabase Schema Migration
+-- Safe to run on existing databases - drops existing policies before recreating
+-- Version 2.0
 
 -- Enable UUID extension if not already enabled
 create extension if not exists "uuid-ossp";
@@ -18,6 +19,11 @@ create table if not exists user_roles (
 );
 
 alter table user_roles enable row level security;
+
+-- Drop existing policies if they exist
+drop policy if exists "Users can read own role" on user_roles;
+drop policy if exists "Admins can manage all roles" on user_roles;
+drop policy if exists "Enable insert for authenticated" on user_roles;
 
 create policy "Users can read own role" on user_roles
   for select using (auth.uid() = user_id);
@@ -53,6 +59,12 @@ create table if not exists suppliers (
 );
 
 alter table suppliers enable row level security;
+
+-- Drop existing policies
+drop policy if exists "Authenticated users can read suppliers" on suppliers;
+drop policy if exists "Managers can insert suppliers" on suppliers;
+drop policy if exists "Managers can update suppliers" on suppliers;
+drop policy if exists "Enable all access for suppliers" on suppliers;
 
 create policy "Authenticated users can read suppliers" on suppliers
   for select using (auth.role() = 'authenticated');
@@ -90,6 +102,11 @@ create table if not exists inspections (
 );
 
 alter table inspections enable row level security;
+
+-- Drop existing policies
+drop policy if exists "Enable all access for authenticated users" on inspections;
+drop policy if exists "Enable insert for anon users" on inspections;
+drop policy if exists "Enable select for anon users" on inspections;
 
 create policy "Enable all access for authenticated users" on inspections
   for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
@@ -132,6 +149,8 @@ create table if not exists items (
 
 alter table items enable row level security;
 
+drop policy if exists "Enable all access for items" on items;
+
 create policy "Enable all access for items" on items
   for all using (true) with check (true);
 
@@ -155,6 +174,10 @@ create table if not exists inspection_logs (
 );
 
 alter table inspection_logs enable row level security;
+
+drop policy if exists "Admins can read all logs" on inspection_logs;
+drop policy if exists "Users can read own logs" on inspection_logs;
+drop policy if exists "Enable insert for authenticated" on inspection_logs;
 
 create policy "Admins can read all logs" on inspection_logs
   for select using (
@@ -195,6 +218,9 @@ create table if not exists api_usage (
 
 alter table api_usage enable row level security;
 
+drop policy if exists "Users can read own api_usage" on api_usage;
+drop policy if exists "Enable insert for all" on api_usage;
+
 create policy "Users can read own api_usage" on api_usage
   for select using (user_id = auth.uid() or 
     exists (select 1 from user_roles ur where ur.user_id = auth.uid() and ur.role = 'admin'));
@@ -223,6 +249,10 @@ create table if not exists user_quotas (
 
 alter table user_quotas enable row level security;
 
+drop policy if exists "Users can read own quota" on user_quotas;
+drop policy if exists "Admins can manage quotas" on user_quotas;
+drop policy if exists "Enable insert for authenticated" on user_quotas;
+
 create policy "Users can read own quota" on user_quotas
   for select using (user_id = auth.uid());
 
@@ -248,6 +278,9 @@ create table if not exists system_settings (
 );
 
 alter table system_settings enable row level security;
+
+drop policy if exists "Anyone can read settings" on system_settings;
+drop policy if exists "Admins can manage settings" on system_settings;
 
 create policy "Anyone can read settings" on system_settings
   for select using (true);
@@ -285,6 +318,8 @@ create table if not exists work_stations (
 
 alter table work_stations enable row level security;
 
+drop policy if exists "Enable all access for work_stations" on work_stations;
+
 create policy "Enable all access for work_stations" on work_stations
   for all using (true) with check (true);
 
@@ -307,6 +342,8 @@ create table if not exists inspection_schedules (
 
 alter table inspection_schedules enable row level security;
 
+drop policy if exists "Enable all access for inspection_schedules" on inspection_schedules;
+
 create policy "Enable all access for inspection_schedules" on inspection_schedules
   for all using (true) with check (true);
 
@@ -328,6 +365,8 @@ create table if not exists scheduled_inspections (
 );
 
 alter table scheduled_inspections enable row level security;
+
+drop policy if exists "Enable all access for scheduled_inspections" on scheduled_inspections;
 
 create policy "Enable all access for scheduled_inspections" on scheduled_inspections
   for all using (true) with check (true);
@@ -419,6 +458,10 @@ create table if not exists usage_logs (
 );
 
 alter table usage_logs enable row level security;
+
+drop policy if exists "Enable insert for usage_logs" on usage_logs;
+drop policy if exists "Enable select for usage_logs" on usage_logs;
+
 create policy "Enable insert for usage_logs" on usage_logs for insert with check (true);
 create policy "Enable select for usage_logs" on usage_logs for select using (true);
 
